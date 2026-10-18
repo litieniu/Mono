@@ -135,7 +135,10 @@ export function useAdSenseRouteRefresh() {
     // 路由变化后，给新挂载的广告位一点时间再统一补推一次
     const t = setTimeout(() => {
       try {
-        const slots = document.querySelectorAll("ins.adsbygoogle:not([data-ad-status])");
+        // 只处理仍在 DOM 中且未被填充的广告位（防旧页面卸载/新页面未挂载的竞态）
+        const slots = Array.from(
+          document.querySelectorAll("ins.adsbygoogle:not([data-ad-status])"),
+        ).filter((el) => el.isConnected);
         if (slots.length > 0) {
           (window.adsbygoogle = window.adsbygoogle || []).push({});
         }

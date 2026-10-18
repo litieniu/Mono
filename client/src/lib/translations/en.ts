@@ -8,6 +8,7 @@ export const en: Record<keyof typeof zh, string> = {
   "nav.friends": "Friends",
   "nav.guestbook": "Guestbook",
   "nav.about": "About",
+  "nav.hosting": "Hosting",
   "nav.search": "Search",
   "nav.menu": "Menu",
   "nav.close": "Close",
@@ -115,6 +116,9 @@ export const en: Record<keyof typeof zh, string> = {
   "footer.rights": "All rights reserved",
   "footer.poweredBy": "Powered by Monolith",
   "footer.using": "Using",
+  "footer.privacy": "Privacy",
+  "footer.disclosure": "Disclosure",
+  "footer.contact": "Contact",
 
   // Ads & affiliate
   "ads.label": "Ad",

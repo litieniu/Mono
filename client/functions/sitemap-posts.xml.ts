@@ -61,8 +61,13 @@ export const onRequest: PagesFunction<{ API_BASE: string }> = async (context) =>
   const urls = posts
     .map((p) => {
       const lastmod = (p.updatedAt || p.createdAt || "").split("T")[0];
+      const zhUrl = `${origin}/posts/${p.slug}`;
+      const enUrl = `${origin}/en/posts/${p.slug}`;
       return `  <url>
-    <loc>${escapeXml(`${origin}/posts/${p.slug}`)}</loc>
+    <loc>${escapeXml(zhUrl)}</loc>
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="${escapeXml(zhUrl)}" />
+    <xhtml:link rel="alternate" hreflang="en" href="${escapeXml(enUrl)}" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="${escapeXml(zhUrl)}" />
     ${lastmod ? `<lastmod>${lastmod}</lastmod>` : ""}
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -71,7 +76,8 @@ export const onRequest: PagesFunction<{ API_BASE: string }> = async (context) =>
     .join("\n");
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
 ${urls}
 </urlset>`;
 

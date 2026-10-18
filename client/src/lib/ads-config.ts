@@ -1,28 +1,35 @@
 /**
- * 广告与推广配置（写死在此文件中，改一处全站生效）
+ * 广告与推广配置
  *
- * 使用说明：
- * 1. 把 ADSENSE_CLIENT 换成你自己的 AdSense 发布商 ID（ca-pub-开头的）
- * 2. 把每个广告位的 SLOT_ID 换成 AdSense 后台生成的广告单元 ID
- * 3. AFFILIATES 数组里填你的推广链接，删掉示例
+ * AdSense 敏感配置走环境变量（Vite 前缀 VITE_），避免硬编码进 Git：
+ *   VITE_ADSENSE_CLIENT=ca-pub-xxxxxxxxxxxxxxxx
+ *   VITE_ADSENSE_SLOT_POST_TOP=1111111111
+ *   VITE_ADSENSE_SLOT_POST_INLINE=2222222222
+ *   VITE_ADSENSE_SLOT_POST_BOTTOM=3333333333
+ *   VITE_ADSENSE_SLOT_HOME_FEED=4444444444
+ *
+ * 本地开发：在 client/.env.local 中填写（已 gitignore）
+ * Cloudflare Pages：在项目设置 → 环境变量中配置
  */
 
 // ============ Google AdSense ============
+const viteEnv = (import.meta as unknown as { env: Record<string, string | undefined> }).env;
+
 export const ADSENSE_CONFIG = {
   /** AdSense 发布商 ID，不填则全站不渲染广告 */
-  client: "ca-pub-XXXXXXXXXXXXXXXX",
+  client: viteEnv.VITE_ADSENSE_CLIENT || "",
   /** 是否启用广告（总开关） */
   enabled: true,
   /** 各广告位 Slot ID */
   slots: {
     /** 文章页：标题下方横幅 */
-    postTop: "1111111111",
+    postTop: viteEnv.VITE_ADSENSE_SLOT_POST_TOP || "",
     /** 文章页：正文中间 */
-    postInline: "2222222222",
+    postInline: viteEnv.VITE_ADSENSE_SLOT_POST_INLINE || "",
     /** 文章页：文末（相关推荐上方） */
-    postBottom: "3333333333",
+    postBottom: viteEnv.VITE_ADSENSE_SLOT_POST_BOTTOM || "",
     /** 首页：文章列表中间 */
-    homeFeed: "4444444444",
+    homeFeed: viteEnv.VITE_ADSENSE_SLOT_HOME_FEED || "",
   },
 } as const;
 

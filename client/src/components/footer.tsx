@@ -35,6 +35,15 @@ export function Footer() {
                 {p.title}
               </LocalizedLink>
             ))}
+            <LocalizedLink href="/privacy" className="text-[13px] text-muted-foreground/60 transition-colors duration-200 hover:text-foreground">
+              {t("footer.privacy")}
+            </LocalizedLink>
+            <LocalizedLink href="/disclosure" className="text-[13px] text-muted-foreground/60 transition-colors duration-200 hover:text-foreground">
+              {t("footer.disclosure")}
+            </LocalizedLink>
+            <LocalizedLink href="/contact" className="text-[13px] text-muted-foreground/60 transition-colors duration-200 hover:text-foreground">
+              {t("footer.contact")}
+            </LocalizedLink>
           </nav>
         )}
         <p className="text-[12px] text-muted-foreground/50">{displayText}</p>

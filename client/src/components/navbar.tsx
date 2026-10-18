@@ -23,6 +23,7 @@ export function Navbar() {
   const fixedStart = useMemo(() => [{ href: "/", label: t("nav.home") }], [t]);
   const fixedEnd = useMemo(
     () => [
+      { href: "/hosting", label: t("nav.hosting") },
       { href: "/archive", label: t("nav.archive") },
       { href: "/friends", label: t("nav.friends") },
       { href: "/guestbook", label: t("nav.guestbook") },

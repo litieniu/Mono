@@ -43,6 +43,9 @@ const AdminMedia = lazy(() => import("@/pages/admin/media").then((m) => ({ defau
 const AdminAnalytics = lazy(() => import("@/pages/admin/analytics").then((m) => ({ default: m.AdminAnalytics })));
 const AdminSeo = lazy(() => import("@/pages/admin/seo").then((m) => ({ default: m.AdminSeo })));
 const PrivacyPage = lazy(() => import("@/pages/privacy").then((m) => ({ default: m.PrivacyPage })));
+const DisclosurePage = lazy(() => import("@/pages/disclosure").then((m) => ({ default: m.DisclosurePage })));
+const ContactPage = lazy(() => import("@/pages/contact").then((m) => ({ default: m.ContactPage })));
+const HostingPage = lazy(() => import("@/pages/hosting").then((m) => ({ default: m.HostingPage })));
 const DynamicPage = lazy(() => import("@/pages/dynamic-page").then((m) => ({ default: m.DynamicPage })));
 const NotFoundPage = lazy(() => import("@/pages/not-found").then((m) => ({ default: m.NotFoundPage })));
 
@@ -130,6 +133,9 @@ export function App() {
                 <Route path="/friends" component={FriendsPage} />
                 <Route path="/guestbook" component={GuestbookPage} />
                 <Route path="/privacy" component={PrivacyPage} />
+                <Route path="/disclosure" component={DisclosurePage} />
+                <Route path="/contact" component={ContactPage} />
+                <Route path="/hosting" component={HostingPage} />
                 <Route path="/page/:slug" component={DynamicPage} />
                 <Route>
                   <NotFoundPage />

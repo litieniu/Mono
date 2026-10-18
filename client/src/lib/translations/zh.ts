@@ -6,6 +6,7 @@ export const zh = {
   "nav.friends": "友链",
   "nav.guestbook": "留言",
   "nav.about": "关于",
+  "nav.hosting": "云服务",
   "nav.search": "搜索",
   "nav.menu": "菜单",
   "nav.close": "关闭",
@@ -114,6 +115,9 @@ export const zh = {
   "footer.rights": "版权所有",
   "footer.poweredBy": "由 Monolith 驱动",
   "footer.using": "使用",
+  "footer.privacy": "隐私政策",
+  "footer.disclosure": "推广声明",
+  "footer.contact": "联系我们",
 
   // 广告与推广
   "ads.label": "广告",
