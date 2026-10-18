@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams } from "wouter";
-import { Link } from "wouter";
+
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { fetchPost, type Post } from "@/lib/api";
@@ -14,9 +14,12 @@ import { RelatedPosts } from "@/components/related-posts";
 import { SeriesNav } from "@/components/series-nav";
 import { PostReactions } from "@/components/post-reactions";
 import { ShareButtons } from "@/components/share-buttons";
+import { PostTopAd, PostInlineAd, PostBottomAd } from "@/components/adsense";
+import { AffiliateButtons } from "@/components/affiliate-buttons";
 import { useSiteSettings } from "@/lib/site-settings";
 import { formatSiteDate } from "@/lib/date-format";
 import { tagHueClass } from "@/lib/tag-color";
+import { useLanguage, LocalizedLink } from "@/lib/i18n";
 
 const renderedPostCache = new Map<string, {
   htmlContent: string;
@@ -29,6 +32,7 @@ function getRenderedPostCacheKey(post: Pick<Post, "slug" | "updatedAt">) {
 
 export function PostPage() {
   const { dateSettings } = useSiteSettings();
+  const { t } = useLanguage();
   const params = useParams<{ slug: string }>();
   const [post, setPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
@@ -160,7 +164,7 @@ export function PostPage() {
   if (error || !post) {
     return (
       <div className="flex flex-1 items-center justify-center">
-        <h1 className="text-[20px] text-muted-foreground">{error || "文章未找到"}</h1>
+        <h1 className="text-[20px] text-muted-foreground">{error || t("post.notFound")}</h1>
       </div>
     );
   }
@@ -177,7 +181,7 @@ export function PostPage() {
         modifiedTime={post.updatedAt}
         tags={post.tags}
         breadcrumbs={[
-          { name: "首页", url: "/" },
+          { name: t("nav.home"), url: "/" },
           { name: post.title, url: `/posts/${post.slug}` },
         ]}
       />
@@ -198,17 +202,17 @@ export function PostPage() {
         {/* 主内容区 */}
         <article className="post-content py-[28px] lg:py-[48px]">
           <div className="mb-[32px] flex items-center justify-between gap-[12px] animate-fade-in">
-            <Link href="/" className="inline-flex min-h-[44px] items-center gap-[6px] rounded-md text-[13px] text-muted-foreground/60 transition-all duration-200 hover:-translate-x-[2px] hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
-              <ArrowLeft className="h-[14px] w-[14px]" />返回首页
-            </Link>
+            <LocalizedLink href="/" className="inline-flex min-h-[44px] items-center gap-[6px] rounded-md text-[13px] text-muted-foreground/60 transition-all duration-200 hover:-translate-x-[2px] hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+              <ArrowLeft className="h-[14px] w-[14px]" />{t("post.backHome")}
+            </LocalizedLink>
             <button
               onClick={toggleReadingMode}
               className="reading-mode-toggle inline-flex min-h-[44px] items-center gap-[6px] rounded-md px-[8px] text-[12px] text-muted-foreground/50 transition-all duration-200 hover:bg-accent/30 hover:text-foreground/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-              title="进入专注阅读模式"
-              aria-label="进入专注阅读模式"
+              title={t("post.readingMode")}
+              aria-label={t("post.readingMode")}
             >
               <BookOpen className="h-[14px] w-[14px]" />
-              专注阅读
+              {t("post.readingMode")}
             </button>
           </div>
 
@@ -230,9 +234,9 @@ export function PostPage() {
             <h1 className="font-heading text-[30px] font-semibold tracking-[-0.035em] leading-[1.08] sm:text-[40px] lg:text-[48px]">{post.title}</h1>
             <p className="mt-[18px] max-w-[680px] text-[16px] leading-[1.85] text-muted-foreground">{post.excerpt}</p>
             <div className="mt-[20px] grid grid-cols-2 gap-[8px] border-t border-border/16 pt-[14px] text-[12px] text-muted-foreground/52 sm:grid-cols-3">
-              <span>发布：{formatSiteDate(post.createdAt, dateSettings)}</span>
-              <span>浏览：{(post.viewCount ?? 0).toLocaleString()}</span>
-              <span className="col-span-2 sm:col-span-1">更新：{formatSiteDate(post.updatedAt, dateSettings)}</span>
+              <span>{t("post.published")}：{formatSiteDate(post.createdAt, dateSettings)}</span>
+              <span>{t("post.views")}：{(post.viewCount ?? 0).toLocaleString()}</span>
+              <span className="col-span-2 sm:col-span-1">{t("post.updatedAt")}：{formatSiteDate(post.updatedAt, dateSettings)}</span>
             </div>
           </header>
 
@@ -242,6 +246,9 @@ export function PostPage() {
               <TableOfContents headings={headings} />
             </div>
           )}
+
+          {/* 广告：标题下方横幅 */}
+          <PostTopAd />
 
           <Separator className="mb-[32px] bg-border/30" />
 
@@ -271,13 +278,16 @@ export function PostPage() {
             }}
           />
 
+          {/* 广告：正文末尾 */}
+          <PostInlineAd />
+
           <Separator className="mt-[48px] bg-border/30" />
           <div className="mt-[24px] flex items-center justify-between flex-wrap gap-[16px] animate-fade-in delay-4">
             <div className="flex items-center gap-[16px]">
-              <Link href="/" className="inline-flex min-h-[44px] items-center gap-[6px] rounded-md text-[13px] text-muted-foreground/60 transition-all duration-200 hover:-translate-x-[2px] hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
-                <ArrowLeft className="h-[14px] w-[14px]" />返回首页
-              </Link>
-              <span className="text-[12px] text-muted-foreground/40 hidden sm:inline-block">发布于 {formatSiteDate(post.createdAt, dateSettings)}</span>
+              <LocalizedLink href="/" className="inline-flex min-h-[44px] items-center gap-[6px] rounded-md text-[13px] text-muted-foreground/60 transition-all duration-200 hover:-translate-x-[2px] hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+                <ArrowLeft className="h-[14px] w-[14px]" />{t("post.backHome")}
+              </LocalizedLink>
+              <span className="text-[12px] text-muted-foreground/40 hidden sm:inline-block">{t("post.publishedAt")} {formatSiteDate(post.createdAt, dateSettings)}</span>
             </div>
             
             {/* 分享按钮组件 */}
@@ -291,6 +301,12 @@ export function PostPage() {
           {post.seriesSlug && (
             <SeriesNav seriesSlug={post.seriesSlug} currentSlug={post.slug} />
           )}
+
+          {/* 广告：文末横幅 */}
+          <PostBottomAd />
+
+          {/* Affiliate 推广按钮 */}
+          <AffiliateButtons />
 
           {/* 相关推荐 */}
           <RelatedPosts currentSlug={post.slug} currentTags={post.tags} />

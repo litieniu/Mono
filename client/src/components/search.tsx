@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Link } from "wouter";
 import { Search, X, FileText, Loader2 } from "lucide-react";
+import { useLanguage } from "@/lib/i18n";
 
 type SearchResult = {
   id: number;
@@ -59,6 +60,7 @@ function splitByQuery(text: string, query: string) {
 }
 
 export function SearchOverlay() {
+  const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -166,7 +168,7 @@ export function SearchOverlay() {
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="搜索文章"
+        aria-label={t("search.open")}
         className="relative w-full max-w-[580px] overflow-hidden rounded-md border border-border/45 bg-card/95 shadow-2xl backdrop-blur-xl animate-slide-in-up"
         onClick={(e) => e.stopPropagation()}
       >
@@ -176,7 +178,7 @@ export function SearchOverlay() {
           <input
             ref={inputRef}
             type="text"
-            placeholder="搜索文章标题、内容..."
+            placeholder={t("search.placeholder")}
             value={query}
             onChange={(e) => handleInputChange(e.target.value)}
             onKeyDown={handleKeyDown}
@@ -186,7 +188,7 @@ export function SearchOverlay() {
           <button
             onClick={() => setOpen(false)}
             className="flex h-[44px] w-[44px] items-center justify-center rounded-md bg-muted/45 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring sm:h-[36px] sm:w-[36px]"
-            aria-label="关闭搜索"
+            aria-label={t("search.close")}
           >
             <X className="h-[14px] w-[14px]" />
           </button>
@@ -284,6 +286,7 @@ export function SearchOverlay() {
 
 /** 导航栏中的搜索触发按钮 */
 export function SearchTrigger() {
+  const { t } = useLanguage();
   const triggerSearch = () => {
     window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", ctrlKey: true }));
   };

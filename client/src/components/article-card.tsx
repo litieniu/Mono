@@ -1,4 +1,3 @@
-import { Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
 import type { PostMeta } from "@/lib/api";
 import { clampCardHeight, clampCardWidth, getArticleCardGridClass, getArticleCardImageMode } from "@/lib/card-layout";
@@ -7,9 +6,11 @@ import type { CSSProperties } from "react";
 import { useSiteSettings } from "@/lib/site-settings";
 import { formatSiteDate } from "@/lib/date-format";
 import { tagHueClass } from "@/lib/tag-color";
+import { useLanguage, LocalizedLink } from "@/lib/i18n";
 
 export function ArticleCard({ post }: { post: PostMeta }) {
   const { dateSettings } = useSiteSettings();
+  const { t } = useLanguage();
   const width = clampCardWidth(post.cardWidth);
   const height = clampCardHeight(post.cardHeight);
   const cover = post.coverImage?.trim() || "";
@@ -30,7 +31,7 @@ export function ArticleCard({ post }: { post: PostMeta }) {
       {post.pinned && (
         <Badge variant="outline" className="h-[24px] rounded-[4px] border-amber-500/30 bg-amber-500/10 px-[8px] text-[12px] font-normal tracking-normal text-amber-500/90">
           <Pin className="h-[12px] w-[12px]" />
-          置顶
+          {t("card.pinned")}
         </Badge>
       )}
       {post.tags.slice(0, 2).map((tag) => (
@@ -51,10 +52,10 @@ export function ArticleCard({ post }: { post: PostMeta }) {
       <div className={`mt-auto flex min-h-[36px] items-end justify-between gap-[12px] ${compact ? "pt-[8px]" : "pt-[14px]"}`}>
         <span className="inline-flex min-w-0 items-center gap-[4px] text-[12px] text-muted-foreground/35">
           <FolderOpen className="h-[12px] w-[12px] shrink-0" />
-          <span className="truncate">{post.category || "未分类"}</span>
+          <span className="truncate">{post.category || t("card.uncategorized")}</span>
         </span>
         <span className="inline-flex items-center gap-[6px] text-[13px] text-muted-foreground/55 transition-colors duration-200 group-hover:text-foreground">
-          阅读全文
+          {t("home.readMore")}
           <ArrowRight className="h-[14px] w-[14px] transition-transform duration-200 group-hover:translate-x-[3px]" />
         </span>
       </div>
@@ -62,7 +63,7 @@ export function ArticleCard({ post }: { post: PostMeta }) {
   );
 
   return (
-    <Link
+    <LocalizedLink
       href={`/posts/${post.slug}`}
       className={`group block w-full rounded-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring ${gridClass}`}
       style={style}
@@ -105,6 +106,6 @@ export function ArticleCard({ post }: { post: PostMeta }) {
           <div className="flex min-h-0 w-full flex-col p-[16px] sm:p-[18px] lg:p-[20px]">{body}</div>
         )}
       </article>
-    </Link>
+    </LocalizedLink>
   );
 }

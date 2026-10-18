@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "wouter";
+import { useLanguage, LocalizedLink } from "@/lib/i18n";
 import { fetchSeriesPosts, type SeriesPost } from "@/lib/api";
 import { ChevronLeft, ChevronRight, List } from "lucide-react";
 
@@ -9,6 +9,7 @@ interface SeriesNavProps {
 }
 
 export function SeriesNav({ seriesSlug, currentSlug }: SeriesNavProps) {
+  const { t } = useLanguage();
   const [posts, setPosts] = useState<SeriesPost[]>([]);
   const [expanded, setExpanded] = useState(false);
 
@@ -38,9 +39,9 @@ export function SeriesNav({ seriesSlug, currentSlug }: SeriesNavProps) {
             {currentIndex + 1} / {posts.length}
           </span>
         </button>
-        <Link href={`/docs/${seriesSlug}/${currentSlug}`} className="series-nav__docs-link" aria-label={`以文档模式打开系列 ${seriesSlug}`}>
+        <LocalizedLink href={`/docs/${seriesSlug}/${currentSlug}`} className="series-nav__docs-link" aria-label={`以文档模式打开系列 ${seriesSlug}`}>
           文档模式
-        </Link>
+        </LocalizedLink>
       </div>
 
       {/* 可折叠目录 */}
@@ -57,13 +58,13 @@ export function SeriesNav({ seriesSlug, currentSlug }: SeriesNavProps) {
                   {post.title}
                 </span>
               ) : (
-                <Link
+                <LocalizedLink
                   href={`/posts/${post.slug}`}
                   className="series-nav__link"
                 >
                   <span className="series-nav__num">{i + 1}.</span>
                   {post.title}
-                </Link>
+                </LocalizedLink>
               )}
             </li>
           ))}
@@ -73,24 +74,24 @@ export function SeriesNav({ seriesSlug, currentSlug }: SeriesNavProps) {
       {/* 上/下一篇导航 */}
       <div className="series-nav__arrows">
         {prev ? (
-          <Link href={`/posts/${prev.slug}`} className="series-nav__arrow series-nav__arrow--prev">
+          <LocalizedLink href={`/posts/${prev.slug}`} className="series-nav__arrow series-nav__arrow--prev">
             <ChevronLeft className="series-nav__arrow-icon" />
             <div className="series-nav__arrow-text">
-              <span className="series-nav__arrow-label">上一篇</span>
+              <span className="series-nav__arrow-label">{t("series.prev")}</span>
               <span className="series-nav__arrow-title">{prev.title}</span>
             </div>
-          </Link>
+          </LocalizedLink>
         ) : (
           <div />
         )}
         {next ? (
-          <Link href={`/posts/${next.slug}`} className="series-nav__arrow series-nav__arrow--next">
+          <LocalizedLink href={`/posts/${next.slug}`} className="series-nav__arrow series-nav__arrow--next">
             <div className="series-nav__arrow-text" style={{ textAlign: "right" }}>
-              <span className="series-nav__arrow-label">下一篇</span>
+              <span className="series-nav__arrow-label">{t("series.next")}</span>
               <span className="series-nav__arrow-title">{next.title}</span>
             </div>
             <ChevronRight className="series-nav__arrow-icon" />
-          </Link>
+          </LocalizedLink>
         ) : (
           <div />
         )}

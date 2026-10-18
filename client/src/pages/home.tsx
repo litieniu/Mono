@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link } from "wouter";
 import { Hero, type HeroAction, type HeroTopic } from "@/components/hero";
 import { ArticleCard } from "@/components/article-card";
+import { HomeFeedAd } from "@/components/adsense";
 
 import { Separator } from "@/components/ui/separator";
 import { fetchPosts, fetchCategories, type PostMeta, type CategoryInfo } from "@/lib/api";
@@ -10,9 +11,11 @@ import { SeoHead } from "@/components/seo-head";
 import { ExternalLink, Mail, Rss, Eye, FolderOpen, Hash, ChevronDown, Link2 } from "lucide-react";
 import { clampCardWidth, getArticleCardGridClass } from "@/lib/card-layout";
 import { useSiteSettings, type PublicSiteSettings } from "@/lib/site-settings";
+import { useLanguage, LocalizedLink } from "@/lib/i18n";
+import type { TranslationKey } from "@/lib/i18n";
 
-const DEFAULT_HERO_ACTIONS: HeroAction[] = [
-  { label: "最新文章", href: "#latest-posts" },
+const getDefaultHeroActions = (t: (k: TranslationKey) => string): HeroAction[] => [
+  { label: t("home.latest"), href: "#latest-posts" },
   { label: "主题索引", href: "#content-index" },
   { label: "工程笔记", href: "/archive" },
 ];
@@ -119,11 +122,12 @@ function getPublicSocialLinks(settings: PublicSiteSettings | null): { id: string
   return links;
 }
 
-function parseHeroActions(value?: string): HeroAction[] {
-  if (!value?.trim()) return DEFAULT_HERO_ACTIONS;
+function parseHeroActions(value: string | undefined, t: (k: TranslationKey) => string): HeroAction[] {
+  const defaults = getDefaultHeroActions(t);
+  if (!value?.trim()) return defaults;
   try {
     const parsed: unknown = JSON.parse(value);
-    if (!Array.isArray(parsed)) return DEFAULT_HERO_ACTIONS;
+    if (!Array.isArray(parsed)) return defaults;
     const actions = parsed
       .filter((item): item is Record<string, unknown> => typeof item === "object" && item !== null)
       .map((item) => ({
@@ -131,9 +135,9 @@ function parseHeroActions(value?: string): HeroAction[] {
         href: typeof item.href === "string" ? item.href : "",
       }))
       .filter((item) => item.label.trim() && item.href.trim());
-    return actions.length > 0 ? actions : DEFAULT_HERO_ACTIONS;
+    return actions.length > 0 ? actions : defaults;
   } catch {
-    return DEFAULT_HERO_ACTIONS;
+    return defaults;
   }
 }
 
@@ -272,6 +276,7 @@ function SparkLine({ data, width = 240, height = 48 }: { data: number[]; width?:
 }
 
 export function HomePage() {
+  const { t } = useLanguage();
   const { settings } = useSiteSettings();
   const [posts, setPosts] = useState<PostMeta[]>([]);
   const [loading, setLoading] = useState(true);
@@ -309,7 +314,7 @@ export function HomePage() {
   const siteTitle = settings.site_title;
   const siteDescription = settings.site_description;
   const heroDescription = settings.hero_description || settings.site_description || undefined;
-  const heroActions = parseHeroActions(settings.hero_actions);
+  const heroActions = parseHeroActions(settings.hero_actions, t);
   const heroTopics = parseHeroTopics(settings.hero_topics);
 
   // 社交链接（优先读取新版可扩展列表，旧字段作为兼容回退）
@@ -364,7 +369,7 @@ export function HomePage() {
               <p className="mt-[8px] line-clamp-2 text-[14px] leading-[1.7] text-muted-foreground/72">{latestPost.excerpt}</p>
             </div>
             <span className="mt-[14px] inline-flex min-h-[36px] items-center gap-[6px] text-[13px] text-muted-foreground/55 transition-colors group-hover:text-foreground md:mt-0">
-              继续阅读 <ExternalLink className="h-[14px] w-[14px]" />
+              {t("home.readMore")} <ExternalLink className="h-[14px] w-[14px]" />
             </span>
           </Link>
         </AnimateIn>
@@ -375,7 +380,7 @@ export function HomePage() {
             <div id="latest-posts" className="mb-[24px] flex flex-col gap-[8px] border-l border-border/50 pl-[14px] sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <p className="text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground/60">Latest Posts</p>
-                <h2 className="mt-[4px] text-[24px] font-semibold tracking-[-0.02em] text-foreground">最新文章</h2>
+                <h2 className="mt-[4px] text-[24px] font-semibold tracking-[-0.02em] text-foreground">{t("home.latest")}</h2>
               </div>
               {!loading && (
                 <span className="text-[13px] text-muted-foreground/60">{posts.length} 篇可读内容</span>
@@ -392,19 +397,26 @@ export function HomePage() {
             <div className="grid grid-cols-1 items-stretch gap-[16px] sm:grid-cols-6 md:grid-cols-12">
               {posts.length > 0 ? (
                 posts.map((post, i) => (
-                  <AnimateIn
-                    key={post.slug}
-                    delay={`delay-${Math.min(i, 6)}`}
-                    className={getArticleCardGridClass(clampCardWidth(post.cardWidth))}
-                  >
-                    <ArticleCard post={post} />
-                  </AnimateIn>
+                  <React.Fragment key={post.slug}>
+                    <AnimateIn
+                      delay={`delay-${Math.min(i, 6)}`}
+                      className={getArticleCardGridClass(clampCardWidth(post.cardWidth))}
+                    >
+                      <ArticleCard post={post} />
+                    </AnimateIn>
+                    {/* 信息流广告：每 6 篇文章后插入一次 */}
+                    {(i + 1) % 6 === 0 && i < posts.length - 1 && (
+                      <div className="col-span-full">
+                        <HomeFeedAd />
+                      </div>
+                    )}
+                  </React.Fragment>
                 ))
               ) : (
                 <div className="col-span-full rounded-md border border-dashed border-border/25 bg-background/20 px-[20px] py-[52px] text-center">
-                  <p className="text-[15px] font-medium text-foreground/80">还没有发布文章</p>
+                  <p className="text-[15px] font-medium text-foreground/80">{t("home.empty")}</p>
                   <p className="mx-auto mt-[8px] max-w-[360px] text-[13px] leading-[1.7] text-muted-foreground/60">
-                    本地数据库初始化后，最新文章会直接出现在这里。
+                    {t("home.emptyDesc")}
                   </p>
                 </div>
               )}

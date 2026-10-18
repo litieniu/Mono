@@ -1,12 +1,18 @@
-import { Route, Switch, useLocation } from "wouter";
+import { Route, Switch, useLocation, Router } from "wouter";
 import { useEffect, Suspense, lazy } from "react";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import { SearchOverlay } from "@/components/search";
+import {
+  LanguageProvider,
+  useLocalizedLocationHook,
+  detectLanguageFromPath,
+} from "@/lib/i18n";
 import { ProtectedRoute } from "@/components/protected-route";
 import { AdminLayout } from "@/components/admin-layout";
 import { CookieConsent, getCookieConsent } from "@/components/cookie-consent";
 import { trackPageview, bindUnloadTracker } from "@/lib/analytics";
+import { useAdSenseRouteRefresh } from "@/components/adsense";
 import { useSiteSettings } from "@/lib/site-settings";
 import {
   parseCustomSnippets,
@@ -75,6 +81,9 @@ export function App() {
     trackPageview(location);
   }, [location]);
 
+  // AdSense：路由切换时刷新广告位
+  useAdSenseRouteRefresh();
+
   // 路由判断逻辑
   const isAdminRoot = matchesPathPrefix(location, "/admin");
   const isEditorPage = matchesPathPrefix(location, "/admin/editor");
@@ -101,7 +110,7 @@ export function App() {
   }, [isAdminRoot, location, settings, siteSettingsReady]);
 
   return (
-    <>
+    <LanguageProvider>
       <SearchOverlay />
 
       {/* ======== 1. 公开前台展示区 ======== */}
@@ -110,6 +119,8 @@ export function App() {
           <Navbar />
           <main className="mx-auto w-full max-w-[1440px] px-[20px] lg:px-[40px] flex-1 flex flex-col">
             <Suspense fallback={<div className="p-8 flex justify-center text-zinc-500">Loading...</div>}>
+              {/* i18n 路由：/en/* 剥离前缀后匹配，后台路由不受影响 */}
+              <Router hook={useLocalizedLocationHook}>
               <Switch>
                 <Route path="/" component={HomePage} />
                 <Route path="/docs/:seriesSlug/:slug?" component={DocsPage} />
@@ -124,6 +135,7 @@ export function App() {
                   <NotFoundPage />
                 </Route>
               </Switch>
+              </Router>
             </Suspense>
           </main>
           <Footer />
@@ -185,6 +197,6 @@ export function App() {
           </AdminLayout>
         </ProtectedRoute>
       )}
-    </>
+    </LanguageProvider>
   );
 }

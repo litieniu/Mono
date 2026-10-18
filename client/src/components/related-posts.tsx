@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
-import { Link } from "wouter";
+import { useLanguage, LocalizedLink } from "@/lib/i18n";
 import { fetchPosts, type PostMeta } from "@/lib/api";
 import { ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +14,7 @@ type RelatedPostsProps = {
  * 基于标签交集相似度推荐，展示最多 3 篇相关文章
  */
 export function RelatedPosts({ currentSlug, currentTags }: RelatedPostsProps) {
+  const { t } = useLanguage();
   const [allPosts, setAllPosts] = useState<PostMeta[]>([]);
 
   useEffect(() => {
@@ -50,7 +51,7 @@ export function RelatedPosts({ currentSlug, currentTags }: RelatedPostsProps) {
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-[12px]">
         {related.map((post) => (
-          <Link
+          <LocalizedLink
             key={post.slug}
             href={`/posts/${post.slug}`}
             className="group relative flex flex-col rounded-xl border border-border/15 bg-card/5 p-[16px] hover:border-border/35 hover:bg-card/20 transition-all duration-300"
@@ -77,7 +78,7 @@ export function RelatedPosts({ currentSlug, currentTags }: RelatedPostsProps) {
               阅读全文
               <ArrowRight className="ml-[4px] h-[10px] w-[10px] translate-x-0 group-hover:translate-x-[3px] transition-transform" />
             </div>
-          </Link>
+          </LocalizedLink>
         ))}
       </div>
     </section>

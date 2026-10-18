@@ -8,8 +8,10 @@ import { SeoHead } from "@/components/seo-head";
 import { useSiteSettings } from "@/lib/site-settings";
 import { formatSiteDate, getSiteDateYear } from "@/lib/date-format";
 import { tagHueClass } from "@/lib/tag-color";
+import { useLanguage, LocalizedLink } from "@/lib/i18n";
 
 export function ArchivePage() {
+  const { t } = useLanguage();
   const { dateSettings } = useSiteSettings();
   const searchString = useSearch();
   const [posts, setPosts] = useState<PostMeta[]>([]);
@@ -26,7 +28,7 @@ export function ArchivePage() {
       })
       .catch((err: unknown) => {
         console.error(err);
-        setError("归档加载失败，请检查网络后重试。");
+        setError(t("archive.loadError"));
       })
       .finally(() => setLoading(false));
   };
@@ -45,15 +47,15 @@ export function ArchivePage() {
     grouped.get(year)!.push(post);
   }
   const years = Array.from(grouped.keys()).sort((a, b) => Number(b) - Number(a));
-  const archiveTitle = selectedCategory ? `分类：${selectedCategory}` : "归档";
+  const archiveTitle = selectedCategory ? `${t("archive.category")}：${selectedCategory}` : t("archive.title");
   const archiveDescription = selectedCategory
-    ? `共 ${visiblePosts.length} 篇 ${selectedCategory} 分类文章，按时间倒序排列。`
+    ? `共 ${visiblePosts.length} 篇 ${selectedCategory} {t("archive.categoryDesc")}`
     : `共 ${posts.length} 篇文章，按时间倒序排列。`;
   const archiveUrl = selectedCategory ? `/archive?category=${encodeURIComponent(selectedCategory)}` : "/archive";
   const breadcrumbs = [
-    { name: "首页", url: "/" },
-    { name: "归档", url: "/archive" },
-    ...(selectedCategory ? [{ name: `分类：${selectedCategory}`, url: archiveUrl }] : []),
+    { name: t("nav.home"), url: "/" },
+    { name: t("archive.title"), url: "/archive" },
+    ...(selectedCategory ? [{ name: `${t("archive.category")}：${selectedCategory}`, url: archiveUrl }] : []),
   ];
 
   return (
@@ -67,9 +69,9 @@ export function ArchivePage() {
             <p className="mt-[8px] text-[14px] leading-[1.7] text-muted-foreground">{archiveDescription}</p>
           </div>
           {selectedCategory && (
-            <Link href="/archive" className="inline-flex min-h-[40px] items-center justify-center rounded-md border border-border/20 px-[12px] text-[12px] text-muted-foreground/70 transition-colors hover:bg-accent/35 hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
-              查看全部
-            </Link>
+            <LocalizedLink href="/archive" className="inline-flex min-h-[40px] items-center justify-center rounded-md border border-border/20 px-[12px] text-[12px] text-muted-foreground/70 transition-colors hover:bg-accent/35 hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+              {t("home.viewAll")}
+            </LocalizedLink>
           )}
         </div>
       </div>
@@ -85,18 +87,18 @@ export function ArchivePage() {
             onClick={loadPosts}
             className="mt-[14px] inline-flex min-h-[40px] items-center rounded-md border border-border/20 px-[12px] text-[12px] text-muted-foreground/75 transition-colors hover:bg-accent/35 hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
           >
-            重试
+            {t("archive.retry")}
           </button>
         </div>
       ) : visiblePosts.length === 0 ? (
         <div className="rounded-md border border-dashed border-border/25 bg-background/20 px-[20px] py-[52px] text-center">
           <p className="text-[15px] font-medium text-foreground/80">
-            {selectedCategory ? "没有找到匹配文章" : "暂无文章"}
+            {selectedCategory ? t("archive.noMatch") : t("archive.empty")}
           </p>
           <p className="mx-auto mt-[8px] max-w-[360px] text-[13px] leading-[1.7] text-muted-foreground/60">
             {selectedCategory
-              ? "当前分类下暂无可见文章，可以返回全部归档继续浏览。"
-              : "博客暂无已发布文章，请稍后再来。"}
+              ? t("archive.noMatchDesc")
+              : t("home.emptyDesc")}
           </p>
         </div>
       ) : (
@@ -109,7 +111,7 @@ export function ArchivePage() {
             </div>
             <div className="overflow-hidden rounded-md border border-border/16 bg-background/22">
               {grouped.get(year)!.map((post) => (
-                <Link key={post.slug} href={`/posts/${post.slug}`} className="group grid min-h-[52px] grid-cols-[86px_minmax(0,1fr)] items-center gap-[12px] border-b border-border/10 px-[12px] py-[10px] transition-all duration-200 last:border-b-0 hover:bg-accent/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring sm:grid-cols-[106px_minmax(0,1fr)_160px]">
+                <LocalizedLink key={post.slug} href={`/posts/${post.slug}`} className="group grid min-h-[52px] grid-cols-[86px_minmax(0,1fr)] items-center gap-[12px] border-b border-border/10 px-[12px] py-[10px] transition-all duration-200 last:border-b-0 hover:bg-accent/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring sm:grid-cols-[106px_minmax(0,1fr)_160px]">
                   <span className="shrink-0 font-mono text-[12px] tabular-nums text-muted-foreground/40">{formatSiteDate(post.createdAt, dateSettings).replace(/\d{4}年/, "")}</span>
                   <span className="min-w-0 truncate text-[15px] text-foreground transition-colors duration-200 group-hover:text-foreground/82">{post.title}</span>
                   <div className="ml-auto hidden shrink-0 gap-[4px] sm:flex">
@@ -117,7 +119,7 @@ export function ArchivePage() {
                       <Badge key={tag} variant="outline" className={`tag-chip ${tagHueClass(tag)} h-[20px] rounded-[3px] px-[6px] text-[11px] font-normal`}>{tag}</Badge>
                     ))}
                   </div>
-                </Link>
+                </LocalizedLink>
               ))}
             </div>
           </AnimateIn>

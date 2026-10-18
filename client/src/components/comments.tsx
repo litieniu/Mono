@@ -4,6 +4,7 @@ import { fetchComments, submitComment, type CommentData } from "@/lib/api";
 import { MessageCircle, Send, User, ChevronDown, ChevronUp } from "lucide-react";
 import { useSiteSettings } from "@/lib/site-settings";
 import { formatSiteDate } from "@/lib/date-format";
+import { useLanguage } from "@/lib/i18n";
 
 /** 通过昵称生成 DiceBear 头像 URL（不再传输邮箱） */
 function avatarUrl(name: string, size = 40): string {
@@ -39,6 +40,7 @@ function CommentItem({ comment }: { comment: CommentData }) {
 
 /* ── 评论表单 ──────────────────────────── */
 function CommentForm({ slug, onSubmitted }: { slug: string; onSubmitted: () => void }) {
+  const { t } = useLanguage();
   const [authorName, setAuthorName] = useState("");
   const [authorEmail, setAuthorEmail] = useState("");
   const [content, setContent] = useState("");
@@ -84,7 +86,7 @@ function CommentForm({ slug, onSubmitted }: { slug: string; onSubmitted: () => v
             type="text"
             value={authorName}
             onChange={(e) => setAuthorName(e.target.value)}
-            placeholder="你的昵称"
+            placeholder={t("comments.nickname")}
             className={inputClass}
             maxLength={50}
             required
@@ -117,7 +119,7 @@ function CommentForm({ slug, onSubmitted }: { slug: string; onSubmitted: () => v
           id="comment-content"
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          placeholder="写下你的想法..."
+          placeholder={t("comments.placeholder")}
           className={`${inputClass} min-h-[100px] resize-y`}
           maxLength={2000}
           required
@@ -143,7 +145,7 @@ function CommentForm({ slug, onSubmitted }: { slug: string; onSubmitted: () => v
         className="inline-flex min-h-[44px] items-center gap-[6px] rounded-md bg-foreground px-[16px] py-[8px] text-[13px] font-medium text-background transition-all duration-200 hover:-translate-y-[2px] hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-40 sm:min-h-[36px]"
       >
         <Send className="h-[14px] w-[14px]" />
-        {submitting ? "提交中..." : "发表评论"}
+        {submitting ? t("guestbook.submitting") : t("comments.submit")}
       </button>
     </form>
   );
@@ -151,6 +153,7 @@ function CommentForm({ slug, onSubmitted }: { slug: string; onSubmitted: () => v
 
 /* ── 评论区主组件 ──────────────────────── */
 export function CommentsSection({ slug }: { slug: string }) {
+  const { t } = useLanguage();
   const [comments, setComments] = useState<CommentData[]>([]);
   const [loading, setLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
@@ -231,7 +234,7 @@ export function CommentsSection({ slug }: { slug: string }) {
             <Separator className="my-[24px] bg-border/20" />
 
             {/* 评论表单 */}
-            <h3 className="mb-[12px] text-[14px] font-medium text-muted-foreground/60">发表评论</h3>
+            <h3 className="mb-[12px] text-[14px] font-medium text-muted-foreground/60">{t("comments.submit")}</h3>
             <CommentForm slug={slug} onSubmitted={loadComments} />
           </div>
         )}

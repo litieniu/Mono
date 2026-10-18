@@ -1,4 +1,11 @@
 import { useEffect } from "react";
+import {
+  buildBlogPosting,
+  buildWebSite,
+  buildBreadcrumbList,
+  type BreadcrumbItem as SDBreadcrumbItem,
+} from "@/lib/structured-data";
+import { useLanguage } from "@/lib/i18n";
 
 type BreadcrumbItem = {
   name: string;
@@ -43,8 +50,11 @@ export function SeoHead({
   breadcrumbs,
   noindex = false,
 }: SeoProps) {
+  const { lang: pageLang } = useLanguage();
   const metaDescription = description || DEFAULT_DESCRIPTION;
   const fullTitle = title ? `${title} | ${siteName}` : `${siteName} — ${metaDescription}`;
+  // 多语言：og:locale 和 JSON-LD 的 inLanguage 跟随当前语言
+  const ogLocale = pageLang === "en" ? "en_US" : "zh_CN";
   const canonicalUrl = url ? `${window.location.origin}${url}` : window.location.href;
   const ogImage = image || `${window.location.origin}/og-default.png`;
 
@@ -91,6 +101,27 @@ export function SeoHead({
     // Canonical URL
     setLink("canonical", canonicalUrl);
 
+    // hreflang：中英双语（SEO 多语言标注）
+    // 清理旧的 hreflang
+    document.querySelectorAll('link[rel="alternate"][hreflang]').forEach((el) => el.remove());
+    if (url) {
+      const origin = window.location.origin;
+      // 当前语言版本
+      const isEn = url.startsWith("/en");
+      const zhUrl = isEn ? url.replace(/^\/en/, "") || "/" : url;
+      const enUrl = isEn ? url : url === "/" ? "/en" : `/en${url}`;
+      const mkHreflang = (lang: string, href: string) => {
+        const el = document.createElement("link");
+        el.setAttribute("rel", "alternate");
+        el.setAttribute("hreflang", lang);
+        el.setAttribute("href", `${origin}${href}`);
+        document.head.appendChild(el);
+      };
+      mkHreflang("zh-CN", zhUrl);
+      mkHreflang("en", enUrl);
+      mkHreflang("x-default", zhUrl);
+    }
+
     // Open Graph
     setMeta("property", "og:title", title || siteName);
     setMeta("property", "og:description", metaDescription);
@@ -98,7 +129,7 @@ export function SeoHead({
     setMeta("property", "og:url", canonicalUrl);
     setMeta("property", "og:site_name", siteName);
     setMeta("property", "og:image", ogImage);
-    setMeta("property", "og:locale", "zh_CN");
+    setMeta("property", "og:locale", ogLocale);
 
     // Twitter Card
     setMeta("name", "twitter:card", "summary_large_image");
@@ -126,71 +157,65 @@ export function SeoHead({
       });
     }
 
-    // JSON-LD 结构化数据
+    // JSON-LD 结构化数据（手写构建器，见 lib/structured-data.ts）
     let ldScript = document.querySelector('script[data-seo="json-ld"]') as HTMLScriptElement | null;
-    const jsonLdArray: object[] = [];
+    let jsonLd: object | null = null;
+    const origin = window.location.origin;
 
-    if (type === "article") {
-      // 文章页：BlogPosting
-      jsonLdArray.push({
-        "@context": "https://schema.org",
-        "@type": "BlogPosting",
-        headline: title,
-        description: metaDescription,
-        url: canonicalUrl,
-        image: ogImage,
-        datePublished: publishedTime,
-        ...(modifiedTime ? { dateModified: modifiedTime } : {}),
-        author: {
-          "@type": "Person",
-          name: siteName,
+    const siteInfo = {
+      name: siteName,
+      url: origin,
+      description: metaDescription,
+      logo: `${origin}/og-default.png`,
+      language: pageLang === "en" ? "en-US" : "zh-CN",
+    };
+
+    const sdBreadcrumbs: SDBreadcrumbItem[] | undefined = breadcrumbs?.map((b) => ({
+      name: b.name,
+      url: `${origin}${b.url}`,
+    }));
+
+    if (type === "article" && title) {
+      // 文章页：完整版 BlogPosting（含 wordCount、articleSection、mainEntityOfPage）
+      // wordCount 从正文估算：调用方可在 props 中传入，这里用标题+描述兜底
+      jsonLd = buildBlogPosting(
+        siteInfo,
+        {
+          title,
+          description: metaDescription,
+          url: canonicalUrl,
+          image: ogImage,
+          datePublished: publishedTime || new Date().toISOString(),
+          ...(modifiedTime ? { dateModified: modifiedTime } : {}),
+          authorName: siteName,
+          ...(tags?.length ? { tags } : {}),
         },
-        publisher: {
-          "@type": "Organization",
-          name: siteName,
-        },
-        ...(tags?.length ? { keywords: tags.join(", ") } : {}),
-      });
+        sdBreadcrumbs,
+      );
     } else if (url === "/") {
-      // 首页：WebSite + SearchAction
-      jsonLdArray.push({
-        "@context": "https://schema.org",
-        "@type": "WebSite",
-        name: siteName,
-        url: window.location.origin,
-        description: metaDescription,
-        potentialAction: {
-          "@type": "SearchAction",
-          target: `${window.location.origin}/?q={search_term_string}`,
-          "query-input": "required name=search_term_string",
-        },
-      });
+      // 首页：WebSite + Organization（含 logo、sameAs 预留）
+      jsonLd = buildWebSite(siteInfo);
+      // 首页面包屑单独追加
+      if (sdBreadcrumbs?.length) {
+        const crumb = buildBreadcrumbList(sdBreadcrumbs);
+        jsonLd = {
+          "@context": "https://schema.org",
+          "@graph": [(jsonLd as { "@graph": object[] })["@graph"][0], (jsonLd as { "@graph": object[] })["@graph"][1], crumb],
+        };
+      }
+    } else if (sdBreadcrumbs?.length) {
+      // 其他页面：只有面包屑
+      jsonLd = buildBreadcrumbList(sdBreadcrumbs);
     }
 
-    // 面包屑导航
-    if (breadcrumbs?.length) {
-      jsonLdArray.push({
-        "@context": "https://schema.org",
-        "@type": "BreadcrumbList",
-        itemListElement: breadcrumbs.map((item, index) => ({
-          "@type": "ListItem",
-          position: index + 1,
-          name: item.name,
-          item: `${window.location.origin}${item.url}`,
-        })),
-      });
-    }
-
-    if (jsonLdArray.length > 0) {
+    if (jsonLd) {
       if (!ldScript) {
         ldScript = document.createElement("script");
         ldScript.setAttribute("type", "application/ld+json");
         ldScript.setAttribute("data-seo", "json-ld");
         document.head.appendChild(ldScript);
       }
-      ldScript.textContent = jsonLdArray.length === 1
-        ? JSON.stringify(jsonLdArray[0])
-        : JSON.stringify(jsonLdArray);
+      ldScript.textContent = JSON.stringify(jsonLd);
     } else if (ldScript) {
       ldScript.remove();
     }
@@ -202,7 +227,7 @@ export function SeoHead({
       // 清理 article 相关 meta（防止页面切换残留）
       document.querySelectorAll('meta[property^="article:"]').forEach((el) => el.remove());
     };
-  }, [fullTitle, metaDescription, canonicalUrl, ogImage, type, publishedTime, modifiedTime, title, siteName, tags, breadcrumbs, noindex]);
+  }, [fullTitle, metaDescription, canonicalUrl, ogImage, type, publishedTime, modifiedTime, title, siteName, tags, breadcrumbs, noindex, pageLang, ogLocale]);
 
   return null; // 纯副作用组件，不渲染 DOM
 }

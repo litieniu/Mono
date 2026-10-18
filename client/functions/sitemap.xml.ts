@@ -1,33 +1,57 @@
-import {
-  buildTargetUrl,
-  createPlainApiBaseErrorResponse,
-  getBackendUrl,
-} from "./_shared";
+import { getBackendUrl } from "./_shared";
 
-// 代理 /sitemap.xml 到 Workers 后端
-// 仅允许 GET/HEAD，避免成为开放 method 转发器
+/**
+ * Sitemap 索引（手写本地生成，不再透传后端）
+ *
+ * /sitemap.xml → sitemap index，指向：
+ *   /sitemap-posts.xml  文章
+ *   /sitemap-pages.xml  静态页面
+ *   /sitemap-tags.xml   标签页
+ */
+
+const XML_HEADERS = {
+  "Content-Type": "application/xml; charset=utf-8",
+  "Cache-Control": "public, max-age=3600",
+};
+
+function xmlResponse(body: string): Response {
+  return new Response(body, { status: 200, headers: XML_HEADERS });
+}
+
+function methodNotAllowed(): Response {
+  return new Response("Method Not Allowed", {
+    status: 405,
+    headers: { Allow: "GET, HEAD", "Content-Type": "text/plain; charset=utf-8" },
+  });
+}
+
 export const onRequest: PagesFunction<{ API_BASE: string }> = async (context) => {
   const method = context.request.method.toUpperCase();
-  if (method !== "GET" && method !== "HEAD") {
-    return new Response("Method Not Allowed", {
-      status: 405,
-      headers: { Allow: "GET, HEAD", "Content-Type": "text/plain; charset=utf-8" },
-    });
-  }
+  if (method !== "GET" && method !== "HEAD") return methodNotAllowed();
 
-  const backend = getBackendUrl(context.env);
-  if (!backend) {
-    return createPlainApiBaseErrorResponse();
-  }
+  const url = new URL(context.request.url);
+  const origin = `${url.protocol}//${url.host}`;
+  const today = new Date().toISOString().split("T")[0];
 
-  const target = buildTargetUrl(backend, context.request);
-  // 不透传客户端 headers，避免泄漏 Cookie / Authorization 给后端代理链路
-  const res = await fetch(target, {
-    method,
-    headers: { Accept: "application/xml, text/xml" },
-  });
-  return new Response(res.body, {
-    status: res.status,
-    headers: res.headers,
-  });
+  const index = `<?xml version="1.0" encoding="UTF-8"?>
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <sitemap>
+    <loc>${origin}/sitemap-posts.xml</loc>
+    <lastmod>${today}</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>${origin}/sitemap-pages.xml</loc>
+    <lastmod>${today}</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>${origin}/sitemap-tags.xml</loc>
+    <lastmod>${today}</lastmod>
+  </sitemap>
+</sitemapindex>`;
+
+  // HEAD 只返回头
+  if (method === "HEAD") {
+    return new Response(null, { status: 200, headers: XML_HEADERS });
+  }
+  return xmlResponse(index);
 };

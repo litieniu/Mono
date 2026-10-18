@@ -1,5 +1,6 @@
 import { Link2, Share2 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
+import { useLanguage } from "@/lib/i18n";
 
 // 自定义 SVG Icons 因为 Lucide移除了品牌图标
 const TwitterIcon = ({ className }: { className?: string }) => (
@@ -21,6 +22,7 @@ interface ShareButtonsProps {
 }
 
 export function ShareButtons({ title, url, className = "" }: ShareButtonsProps) {
+  const { t } = useLanguage();
   const [copied, setCopied] = useState(false);
   const copyTimerRef = useRef<number | null>(null);
   const shareUrl = url || (typeof window !== "undefined" ? window.location.href : "");
@@ -77,8 +79,8 @@ export function ShareButtons({ title, url, className = "" }: ShareButtonsProps) 
         <button
           onClick={handleCopy}
           className="flex h-[32px] w-[32px] items-center justify-center rounded-full bg-card/60 border border-border/30 text-muted-foreground transition-all hover:bg-card hover:text-foreground hover:border-border/60"
-          title={copied ? "已复制链接!" : "复制链接"}
-          aria-label={copied ? "已复制链接!" : "复制链接"}
+          title={copied ? "已复制链接!" : t("share.copyLink")}
+          aria-label={copied ? "已复制链接!" : t("share.copyLink")}
         >
           <Link2 className={`h-[14px] w-[14px] transition-transform ${copied ? "scale-110 text-green-500" : ""}`} />
         </button>
