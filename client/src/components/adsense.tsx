@@ -101,7 +101,7 @@ export function AdSlot({ slot, size, className = "", label }: AdSlotProps) {
   }
 
   return (
-    <div className={`ad-slot my-[24px] ${className}`}>
+    <div className={`ad-slot my-[16px] md:my-[24px] ${className}`}>
       <div className="mb-[6px] text-center font-mono text-[10px] tracking-widest text-muted-foreground/40">
         {displayLabel}
       </div>

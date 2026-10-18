@@ -136,7 +136,7 @@ export function FriendsPage() {
                   key={link.id}
                   href={link.url}
                   target="_blank"
-                  rel="noopener noreferrer"
+                  rel="noopener noreferrer nofollow"
                   className="group rounded-md border border-border/25 bg-card/10 p-[14px] transition-all duration-300 hover:-translate-y-[2px] hover:border-foreground/20 hover:bg-card/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
                 >
                   <div className="flex items-start gap-[12px]">

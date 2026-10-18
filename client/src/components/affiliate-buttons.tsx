@@ -32,7 +32,7 @@ export function AffiliateButtons() {
             key={item.name}
             href={item.url}
             target="_blank"
-            rel="noopener sponsored"
+            rel="noopener sponsored nofollow"
             className={`group flex items-center justify-between gap-[12px] rounded-md border px-[16px] py-[14px] transition-all duration-200 hover:-translate-y-[2px] hover:shadow-md ${
               item.accentClass ?? "bg-accent/30 border-border/20"
             }`}

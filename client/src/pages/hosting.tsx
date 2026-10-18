@@ -126,7 +126,7 @@ export function HostingPage() {
                     <a
                       href={row.url}
                       target="_blank"
-                      rel="noopener sponsored"
+                      rel="noopener sponsored nofollow"
                       className="inline-flex items-center gap-[6px] whitespace-nowrap rounded-md bg-foreground px-[14px] py-[8px] text-[13px] font-medium text-background transition-transform hover:-translate-y-[1px]"
                     >
                       {isEn ? "Get Deal" : "领取优惠"}
