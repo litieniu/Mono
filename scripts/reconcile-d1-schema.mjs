@@ -37,7 +37,13 @@ function parseArgs(argv) {
 }
 
 function runWrangler(args, title) {
-  const result = spawnSync("npx", ["wrangler", ...args], {
+  // Windows 下 spawnSync(shell:true) 不会自动给带空格的参数加引号，
+  // 必须自带双引号，否则 cmd 会把 SQL 这类参数拆散（表现为 wrangler 报 Unknown arguments）。
+  // 非 Windows 下 shell:false，参数原样传递，不加引号。
+  const safeArgs = IS_WIN
+    ? args.map((a) => (typeof a === "string" && /[ \t]/.test(a) && !/^".*"$/.test(a) ? `"${a}"` : a))
+    : args;
+  const result = spawnSync("npx", ["wrangler", ...safeArgs], {
     cwd: serverRoot,
     encoding: "utf8",
     shell: SHELL,
