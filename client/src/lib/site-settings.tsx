@@ -82,7 +82,14 @@ function normalizeDatePrecision(value: string): SiteDatePrecision {
 }
 
 export function SiteSettingsProvider({ children }: { children: ReactNode }) {
-  const [settings, setSettings] = useState<PublicSiteSettings>(DEFAULT_SITE_SETTINGS);
+  // 首屏不阻塞：先用上次缓存的设置渲染，/api/settings/public 返回后再更新
+  const [settings, setSettings] = useState<PublicSiteSettings>(() => {
+    try {
+      const cached = localStorage.getItem("monolith_settings_cache");
+      if (cached) return { ...DEFAULT_SITE_SETTINGS, ...JSON.parse(cached) };
+    } catch { /* 无缓存或解析失败则用默认 */ }
+    return DEFAULT_SITE_SETTINGS;
+  });
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -98,6 +105,9 @@ export function SiteSettingsProvider({ children }: { children: ReactNode }) {
       .then((data) => {
         if (cancelled) return;
         setSettings((previous) => ({ ...previous, ...data }));
+        try {
+          localStorage.setItem("monolith_settings_cache", JSON.stringify(data));
+        } catch { /* 存储配额不足等则忽略 */ }
       })
       .catch(() => {})
       .finally(() => {

@@ -23,6 +23,27 @@
     <title>Monolith — 代码、设计与边缘计算</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="alternate" type="application/rss+xml" title="Monolith RSS" href="/rss.xml" />
+
+    <!-- Google Fonts：preconnect + 非阻塞加载，不阻塞首屏渲染 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@450;500;600;700&amp;family=Work+Sans:wght@400;500;600;700&amp;display=swap" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@450;500;600;700&amp;family=Work+Sans:wght@400;500;600;700&amp;display=swap" media="print" onload="this.media='all'" />
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@450;500;600;700&amp;family=Work+Sans:wght@400;500;600;700&amp;display=swap" /></noscript>
+
+    <!-- 首屏加载占位样式 -->
+    <style>
+      #boot-splash{position:fixed;inset:0;z-index:60;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:#0d1117;transition:opacity .3s ease}
+      #boot-splash.is-done{opacity:0;pointer-events:none}
+      #boot-splash .mono-word{font:700 22px/1 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;letter-spacing:.35em;text-indent:.35em;color:#e6edf3}
+      #boot-splash .mono-spin{width:30px;height:30px;border-radius:50%;border:3px solid #30363d;border-top-color:#58a6ff;animation:mono-spin .9s linear infinite}
+      @keyframes mono-spin{to{transform:rotate(360deg)}}
+      html[data-theme="light"] #boot-splash{background:#ffffff}
+      html[data-theme="light"] #boot-splash .mono-word{color:#1f2328}
+      html[data-theme="light"] #boot-splash .mono-spin{border-color:#d0d7de;border-top-color:#0969da}
+      html[data-style="fluid"] #boot-splash{background:#0d0b1a}
+      html[data-style="fluid"][data-theme="light"] #boot-splash{background:#f6f4fb}
+    </style>
   </head>
   <body class="min-h-full flex flex-col font-sans bg-background text-foreground">
     <!-- 主题初始化：在 React 加载前设置 data-theme / data-style，防止闪烁 -->
@@ -58,23 +79,11 @@
         } catch (e) {}
       })();
     </script>
-    <div id="root" class="min-h-screen flex flex-col">
-      <!-- 首屏加载占位：JS 包下载/解析完成前显示，React 挂载后自动替换 -->
-      <style>
-        #boot-splash{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:#0d1117}
-        #boot-splash .mono-word{font:700 22px/1 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;letter-spacing:.35em;text-indent:.35em;color:#e6edf3}
-        #boot-splash .mono-spin{width:30px;height:30px;border-radius:50%;border:3px solid #30363d;border-top-color:#58a6ff;animation:mono-spin .9s linear infinite}
-        @keyframes mono-spin{to{transform:rotate(360deg)}}
-        html[data-theme="light"] #boot-splash{background:#ffffff}
-        html[data-theme="light"] #boot-splash .mono-word{color:#1f2328}
-        html[data-theme="light"] #boot-splash .mono-spin{border-color:#d0d7de;border-top-color:#0969da}
-        html[data-style="fluid"] #boot-splash{background:#0d0b1a}
-        html[data-style="fluid"][data-theme="light"] #boot-splash{background:#f6f4fb}
-      </style>
-      <div id="boot-splash" aria-hidden="true">
-        <div class="mono-word">MONOLITH</div>
-        <div class="mono-spin"></div>
-      </div>
+    <div id="root" class="min-h-screen flex flex-col"></div>
+    <!-- 首屏加载占位：JS 包下载/解析期间显示；结束条件由 React 监听首屏渲染完成后移除（见 app.tsx dismissBootSplash），消除动画消失与内容呈现之间的断档 -->
+    <div id="boot-splash" aria-hidden="true">
+      <div class="mono-word">MONOLITH</div>
+      <div class="mono-spin"></div>
     </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

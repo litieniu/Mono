@@ -12,8 +12,13 @@ import { ProtectedRoute } from "@/components/protected-route";
 import { AdminLayout } from "@/components/admin-layout";
 import { CookieConsent, getCookieConsent } from "@/components/cookie-consent";
 import { trackPageview, bindUnloadTracker } from "@/lib/analytics";
+import { fetchPosts } from "@/lib/api";
 import { useAdSenseRouteRefresh } from "@/components/adsense";
 import { useSiteSettings } from "@/lib/site-settings";
+// 核心公开页静态同步导入：消除首屏二次 JS 分包等待（后台 Admin* 与次要页面保留 lazy）
+import { HomePage } from "@/pages/home";
+import { PostPage } from "@/pages/post";
+import { HostingPage } from "@/pages/hosting";
 import {
   parseCustomSnippets,
   legacyToSnippets,
@@ -22,9 +27,7 @@ import {
   removeCustomInjection,
 } from "@/lib/custom-injection";
 
-// 代码分割 (Code Splitting)
-const HomePage = lazy(() => import("@/pages/home").then((m) => ({ default: m.HomePage })));
-const PostPage = lazy(() => import("@/pages/post").then((m) => ({ default: m.PostPage })));
+// 代码分割 (Code Splitting)：核心公开页已改为顶部静态导入，后台与次要页面保留 lazy
 const DocsPage = lazy(() => import("@/pages/docs").then((m) => ({ default: m.DocsPage })));
 const ArchivePage = lazy(() => import("@/pages/archive").then((m) => ({ default: m.ArchivePage })));
 const AboutPage = lazy(() => import("@/pages/about").then((m) => ({ default: m.AboutPage })));
@@ -45,7 +48,6 @@ const AdminSeo = lazy(() => import("@/pages/admin/seo").then((m) => ({ default: 
 const PrivacyPage = lazy(() => import("@/pages/privacy").then((m) => ({ default: m.PrivacyPage })));
 const DisclosurePage = lazy(() => import("@/pages/disclosure").then((m) => ({ default: m.DisclosurePage })));
 const ContactPage = lazy(() => import("@/pages/contact").then((m) => ({ default: m.ContactPage })));
-const HostingPage = lazy(() => import("@/pages/hosting").then((m) => ({ default: m.HostingPage })));
 const DynamicPage = lazy(() => import("@/pages/dynamic-page").then((m) => ({ default: m.DynamicPage })));
 const NotFoundPage = lazy(() => import("@/pages/not-found").then((m) => ({ default: m.NotFoundPage })));
 
@@ -74,9 +76,39 @@ function matchesPathPrefix(pathname: string, prefix: string) {
   return pathname === prefix || pathname.startsWith(`${prefix}/`);
 }
 
+// 首屏加载动画结束：淡出并移除 #boot-splash（幂等）
+function dismissBootSplash() {
+  const el = document.getElementById("boot-splash");
+  if (!el || el.dataset.dismissed) return;
+  el.dataset.dismissed = "1";
+  el.classList.add("is-done");
+  window.setTimeout(() => el.remove(), 400);
+}
+
 export function App() {
   const [location] = useLocation();
   const { settings, ready: siteSettingsReady } = useSiteSettings();
+
+  // 首屏预热：非后台页面在挂载第一毫秒就发出 /api/posts，与 /api/settings/public 并行
+  // 利用 api.ts 的 inflightRequests + publicCache 去重，页面组件内的后续调用不会重复发请求
+  // 加载动画结束条件：首屏数据返回（或 8 秒兜底）后再移除 boot-splash，消除动画消失与内容呈现之间的断档
+  useEffect(() => {
+    if (location.startsWith("/admin")) {
+      dismissBootSplash();
+      return;
+    }
+    let settled = false;
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      // 再等一帧，确保 React 已把首屏内容提交到 DOM
+      requestAnimationFrame(() => dismissBootSplash());
+    };
+    fetchPosts().then(finish, finish);
+    const failsafe = window.setTimeout(finish, 8000);
+    return () => window.clearTimeout(failsafe);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // 访客埋点：路由变化触发 pageview，页面卸载触发 duration 上报
   useEffect(() => {
@@ -116,8 +148,8 @@ export function App() {
     <LanguageProvider>
       <SearchOverlay />
 
-      {/* ======== 1. 公开前台展示区 ======== */}
-      {isPublicPage && siteSettingsReady && (
+      {/* ======== 1. 公开前台展示区（首屏不等待 siteSettingsReady，立即挂载） ======== */}
+      {isPublicPage && (
         <>
           <Navbar />
           <main className="mx-auto w-full max-w-[1440px] px-[20px] lg:px-[40px] flex-1 flex flex-col">
@@ -147,12 +179,6 @@ export function App() {
           <Footer />
           <CookieConsent />
         </>
-      )}
-
-      {isPublicPage && !siteSettingsReady && (
-        <main className="mx-auto flex w-full max-w-[1440px] flex-1 items-center justify-center px-[20px] lg:px-[40px]">
-          <div className="h-[180px] w-full max-w-[720px] animate-pulse rounded-md bg-card/20" aria-label="正在加载站点设置" />
-        </main>
       )}
 
       {/* ======== 2. 后台全屏编辑器区 ======== */}

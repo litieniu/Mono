@@ -35,6 +35,7 @@ export function useInView(threshold = 0.1, once = true) {
 /**
  * 动画入场组件
  * 包裹任意内容，进入视口时触发 CSS 动画
+ * 首屏默认可见：未触发 IntersectionObserver 时不再设 opacity-0，避免隐形黑屏等待
  */
 export function AnimateIn({
   children,
@@ -54,7 +55,7 @@ export function AnimateIn({
   return (
     <Tag
       ref={ref}
-      className={`${isVisible ? animation : "opacity-0"} ${delay} ${className}`}
+      className={`${isVisible ? animation : ""} ${delay} ${className}`}
       style={{ willChange: isVisible ? "auto" : "transform, opacity" }}
     >
       {children}
