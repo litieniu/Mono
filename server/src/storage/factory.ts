@@ -13,12 +13,12 @@ import { D1Adapter } from "./db/d1";
 import { R2Adapter } from "./object/r2";
 import { S3Adapter } from "./object/s3";
 
-// 2026-10-19 性能修复：schema 检查每 isolate 只跑一次。
-// 原逻辑每请求跑约 18 个串行 D1 查询（9 张表 × 查表+查列），导致所有 API（含 /api/health）TTFB 1-2s。
-// Worker isolate 会复用，模块级变量跨请求有效；新部署起新 isolate，标记归零，安全网仍在；
-// 检查抛错时不标记，下个请求会重试，行为与之前一致。
-
-const schemaCheckedPerIsolate = { done: false };
+// 2026-10-19 性能决策：请求路径不再做 schema 检查。
+// ensureSchemaBaseline() 每请求约 18 个串行 D1 查询，导致所有 API（含 /api/health）TTFB 1-2s。
+// 曾试过 isolate 级缓存，但本站零流量、isolate 几乎不复用，效果不足，故彻底移除。
+// schema 一致性改由部署时 migration 唯一保证（d1_migrations 表跟踪）。
+// 注意：若某次部署漏跑 migration，报错将是 D1 原生的 no such table/column，
+// 不再是清晰的"schema 未就绪"提示——此时第一反应是查 migration，而不是加回运行时检查。
 
 /**
  * 创建数据库适配器
@@ -26,21 +26,11 @@ const schemaCheckedPerIsolate = { done: false };
  */
 export async function createDatabase(env: Record<string, unknown>): Promise<IDatabase> {
   const provider = (env.DB_PROVIDER as string) || "d1";
-  const autoSchemaMigration = env.AUTO_SCHEMA_MIGRATION === "true";
 
   switch (provider) {
     case "d1": {
       if (!env.DB) throw new Error("缺少 D1 数据库绑定 (env.DB)");
-      const d1Adapter = new D1Adapter(env.DB as D1Database);
-      if (!schemaCheckedPerIsolate.done) {
-        if (autoSchemaMigration) {
-          await d1Adapter.ensureSchema();
-        } else {
-          await d1Adapter.ensureSchemaBaseline();
-        }
-        schemaCheckedPerIsolate.done = true;
-      }
-      return d1Adapter;
+      return new D1Adapter(env.DB as D1Database);
     }
 
     case "turso": {
