@@ -1,6 +1,6 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
-import { ADSENSE_CONFIG } from "@/lib/ads-config";
+import { ADSENSE_CONFIG, AFFILIATE_CONFIG } from "@/lib/ads-config";
 import { useLanguage } from "@/lib/i18n";
 
 declare global {
@@ -61,6 +61,25 @@ const SIZE_STYLES: Record<AdSlotProps["size"], React.CSSProperties> = {
   responsive: { display: "block", width: "100%" },
 };
 
+/** 移动端降级尺寸：防止 728px 在 375px 屏幕上横向溢出 */
+const MOBILE_SIZE_STYLES: Record<AdSlotProps["size"], React.CSSProperties> = {
+  leaderboard: { width: "320px", height: "100px", maxWidth: "100%" },
+  banner: { width: "320px", height: "50px", maxWidth: "100%" },
+  "large-rect": { width: "300px", height: "250px", maxWidth: "100%" },
+  responsive: { display: "block", width: "100%" },
+};
+
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+  return isMobile;
+}
+
 /**
  * 硬编码广告位（Ad Inserter 风格）
  * - 固定尺寸，不交给 AdSense 自动决定
@@ -71,6 +90,10 @@ export function AdSlot({ slot, size, className = "", label }: AdSlotProps) {
   const displayLabel = label ?? t("ads.label");
   const insRef = useRef<HTMLElement>(null);
   const pushedRef = useRef(false);
+  const [adBlocked, setAdBlocked] = useState(false);
+  const isMobile = useIsMobile();
+  // 移动端自动降级尺寸，防横向溢出
+  const sizeStyle = isMobile ? MOBILE_SIZE_STYLES[size] : SIZE_STYLES[size];
 
   useEffect(() => {
     if (!ADSENSE_CONFIG.enabled || !ADSENSE_CONFIG.client.startsWith("ca-pub-")) return;
@@ -84,11 +107,20 @@ export function AdSlot({ slot, size, className = "", label }: AdSlotProps) {
           if (!cancelled && !pushedRef.current) {
             pushAd();
             pushedRef.current = true;
+            // 检测广告是否被拦截：1秒后检查 ins 是否有内容
+            setTimeout(() => {
+              if (!cancelled && insRef.current) {
+                const hasAd = insRef.current.querySelector("iframe") !== null ||
+                  insRef.current.getAttribute("data-ad-status") === "filled";
+                if (!hasAd) setAdBlocked(true);
+              }
+            }, 1500);
           }
         }, 100);
       })
       .catch(() => {
-        // 脚本加载失败则静默跳过，不破坏页面
+        // 脚本加载失败（被 AdBlock 拦截）→ 显示 Affiliate 兜底
+        if (!cancelled) setAdBlocked(true);
       });
 
     return () => {
@@ -100,23 +132,59 @@ export function AdSlot({ slot, size, className = "", label }: AdSlotProps) {
     return null;
   }
 
+  // AdBlock 兜底：渲染 Affiliate 推广卡片
+  if (adBlocked) {
+    return <AdBlockFallback className={className} />;
+  }
+
   return (
     <div className={`ad-slot my-[16px] md:my-[24px] ${className}`}>
       <div className="mb-[6px] text-center font-mono text-[10px] tracking-widest text-muted-foreground/40">
         {displayLabel}
       </div>
-      <div className="flex justify-center overflow-hidden">
+      <div className="flex justify-center overflow-hidden" style={{ maxWidth: "100%" }}>
         <ins
           // @ts-expect-error adsbygoogle 自定义元素
           ref={insRef}
           className="adsbygoogle"
-          style={SIZE_STYLES[size]}
+          style={sizeStyle}
           data-ad-client={ADSENSE_CONFIG.client}
           data-ad-slot={slot}
           {...(size === "responsive"
             ? { "data-ad-format": "auto", "data-full-width-responsive": "true" }
             : {})}
         />
+      </div>
+    </div>
+  );
+}
+
+/**
+ * AdBlock 兜底组件：广告被拦截时显示 Affiliate 推广卡片
+ */
+function AdBlockFallback({ className = "" }: { className?: string }) {
+  const { t } = useLanguage();
+  const affiliates = AFFILIATE_CONFIG.items.slice(0, 2);
+  if (affiliates.length === 0) return null;
+
+  return (
+    <div className={`ad-slot my-[16px] md:my-[24px] ${className}`}>
+      <div className="mb-[6px] text-center font-mono text-[10px] tracking-widest text-muted-foreground/40">
+        {t("affiliate.title")}
+      </div>
+      <div className="grid gap-[12px] sm:grid-cols-2">
+        {affiliates.map((item) => (
+          <a
+            key={item.name}
+            href={item.url}
+            target="_blank"
+            rel="noopener sponsored nofollow"
+            className="rounded-md border border-border/20 p-[16px] transition-all hover:-translate-y-[1px] hover:border-foreground/30"
+          >
+            <div className="font-medium text-[14px] mb-[4px]">{item.name}</div>
+            <div className="text-[13px] text-muted-foreground">{item.description}</div>
+          </a>
+        ))}
       </div>
     </div>
   );

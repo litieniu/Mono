@@ -102,6 +102,14 @@ export function SeoHead({
     setLink("canonical", canonicalUrl);
 
     // hreflang：中英双语（SEO 多语言标注）
+    // 防护：如果内容主要是中文，不输出 en hreflang（防"英文外壳+中文正文"被判重复内容）
+    const isCjkHeavy = (s: string) => {
+      if (!s) return false;
+      const cjk = (s.match(/[\u4e00-\u9fff]/g) || []).length;
+      return cjk / Math.max(s.length, 1) > 0.3;
+    };
+    const contentIsChinese = isCjkHeavy(title || "") || isCjkHeavy(metaDescription || "");
+
     // 清理旧的 hreflang
     document.querySelectorAll('link[rel="alternate"][hreflang]').forEach((el) => el.remove());
     if (url) {
@@ -118,7 +126,10 @@ export function SeoHead({
         document.head.appendChild(el);
       };
       mkHreflang("zh-CN", zhUrl);
-      mkHreflang("en", enUrl);
+      // 只有内容不是中文时才声明英文版本
+      if (!contentIsChinese) {
+        mkHreflang("en", enUrl);
+      }
       mkHreflang("x-default", zhUrl);
     }
 

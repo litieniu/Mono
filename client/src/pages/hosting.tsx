@@ -35,7 +35,7 @@ const HOSTING_TABLE: HostingRow[] = [
     rating: 5,
     badge: "本站同款",
     badgeEn: "Powers this blog",
-    url: "https://www.cloudflare.com/",
+    url: "/go/cloudflare",
   },
   {
     name: "Vultr",
@@ -47,7 +47,7 @@ const HOSTING_TABLE: HostingRow[] = [
     pros: "新用户有赠金，适合短期测试",
     prosEn: "New user credit, great for short-term tests",
     rating: 4,
-    url: "https://www.vultr.com/",
+    url: "/go/vultr",
   },
 ];
 
@@ -123,15 +123,15 @@ export function HostingPage() {
                     </div>
                   </td>
                   <td className="px-[16px] py-[14px]">
-                    <a
+                    <LocalizedLink
                       href={row.url}
-                      target="_blank"
+                      target={row.url.startsWith("/go/") ? "_self" : "_blank"}
                       rel="noopener sponsored nofollow"
                       className="inline-flex items-center gap-[6px] whitespace-nowrap rounded-md bg-foreground px-[14px] py-[8px] text-[13px] font-medium text-background transition-transform hover:-translate-y-[1px]"
                     >
                       {isEn ? "Get Deal" : "领取优惠"}
                       <ExternalLink className="h-[13px] w-[13px]" />
-                    </a>
+                    </LocalizedLink>
                   </td>
                 </tr>
               ))}

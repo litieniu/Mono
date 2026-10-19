@@ -336,26 +336,62 @@ function renderMath(md: string): string {
 }
 
 /**
+ * 解析 :::aff-card{...} 短代码，渲染为推广卡片 HTML
+ * 用法：:::aff-card{id="bwh" coupon="CODE" discount="6.77%" price="$49.99/年"}
+ */
+function renderAffCards(md: string): string {
+  return md.replace(
+    /:::aff-card\{([^}]*)\}/g,
+    (_match, attrs: string) => {
+      const get = (key: string) => {
+        const m = attrs.match(new RegExp(`${key}="([^"]*)"`));
+        return m ? m[1] : "";
+      };
+      const id = get("id");
+      const coupon = get("coupon");
+      const discount = get("discount");
+      const price = get("price");
+      if (!id) return "";
+
+      const esc = (s: string) =>
+        s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+      return `<div class="aff-card" data-aff-id="${esc(id)}">
+  <div class="aff-card-header">
+    <span class="aff-card-badge">SPONSORED</span>
+    ${discount ? `<span class="aff-card-discount">${esc(discount)}</span>` : ""}
+  </div>
+  ${price ? `<div class="aff-card-price">${esc(price)}</div>` : ""}
+  ${coupon ? `<div class="aff-card-coupon"><code>${esc(coupon)}</code><button class="aff-card-copy" data-coupon="${esc(coupon)}" onclick="navigator.clipboard.writeText('${esc(coupon)}');this.textContent='已复制';setTimeout(()=>this.textContent='复制优惠码',2000)">复制优惠码</button></div>` : ""}
+  <a class="aff-card-cta" href="/go/${esc(id)}" rel="noopener sponsored nofollow">立即购买 →</a>
+</div>`;
+    }
+  );
+}
+
+/**
  * u6e32u67d3 Markdown u4e3a HTMLuff08u5df2u901au8fc7 DOMPurify u51c0u5316uff0cu9632 XSSuff09
  * u652fu6301uff1au6807u9898/u7c97u4f53/u659cu4f53/u5220u9664u7ebf/u94feu63a5/u56feu7247/u4ee3u7801u5757(u9ad8u4eae)/u884cu5185u4ee3u7801/
  *       u8868u683c/u4efbu52a1u5217u8868/u6709u5e8fu65e0u5e8fu5217u8868/u5f15u7528/u5206u9694u7ebf/u811au6ce8/u6570u5b66u516cu5f0f(KaTeX)
  */
 export function renderMarkdown(md: string): string {
-  const mathProcessed = renderMath(md);
+  const affProcessed = renderAffCards(md);
+  const mathProcessed = renderMath(affProcessed);
   const raw = marked.parse(mathProcessed, { async: false }) as string;
   // 净化 HTML，允许 iframe（B站/YouTube 嵌入）和代码块复制按钮所需的 data 属性
+  // 额外允许 aff-card 卡片所需的 class 和 data 属性
   return DOMPurify.sanitize(raw, {
     ADD_TAGS: ["iframe", "video", "source", "figure", "figcaption",
       "math", "mrow", "mi", "mo", "mn", "msup", "msub", "mfrac",
       "mover", "munder", "msqrt", "mroot", "mtable", "mtr", "mtd",
       "mtext", "mspace", "annotation", "semantics", "mpadded",
       "menclose", "msubsup", "munderover", "mmultiscripts",
-      "span"],
+      "span", "button"],
     ADD_ATTR: [
       "allow", "allowfullscreen", "frameborder", "scrolling",
       "playsinline", "preload", "controls",
-      "loading", "decoding", "data-lazy-img",
-      "target", "rel",
+      "loading", "decoding", "data-lazy-img", "data-aff-id", "data-coupon",
+      "target", "rel", "onclick",
       "xmlns", "encoding", "mathvariant", "stretchy", "fence",
       "separator", "accent", "accentunder", "lspace", "rspace",
       "columnalign", "rowalign", "columnspacing", "rowspacing",

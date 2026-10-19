@@ -2975,3 +2975,77 @@
 :root[data-theme="light"] .tag-hue-3 { --tag-fg: oklch(0.50 0.13 80);  --tag-bg: oklch(0.72 0.14 85 / 12%);  --tag-border: oklch(0.72 0.14 85 / 30%); }
 :root[data-theme="light"] .tag-hue-4 { --tag-fg: oklch(0.50 0.19 27);  --tag-bg: oklch(0.65 0.16 25 / 9%);   --tag-border: oklch(0.65 0.16 25 / 26%); }
 :root[data-theme="light"] .tag-hue-5 { --tag-fg: oklch(0.46 0.12 200); --tag-bg: oklch(0.68 0.13 195 / 10%); --tag-border: oklch(0.68 0.13 195 / 28%); }
+
+/* ── 正文内嵌 Affiliate 推广卡片 ── */
+.aff-card {
+  margin: 24px 0;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--card) 0%, color-mix(in srgb, var(--card) 85%, var(--primary) 15%) 100%);
+}
+.aff-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.aff-card-badge {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+.aff-card-discount {
+  font-size: 13px;
+  font-weight: 600;
+  color: #22c55e;
+}
+.aff-card-price {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+.aff-card-coupon {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.aff-card-coupon code {
+  padding: 6px 12px;
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  font-family: monospace;
+  font-size: 14px;
+  background: var(--muted);
+}
+.aff-card-copy {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  background: var(--secondary);
+  color: var(--secondary-foreground);
+  cursor: pointer;
+  border: none;
+}
+.aff-card-copy:hover {
+  opacity: 0.85;
+}
+.aff-card-cta {
+  display: inline-block;
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  text-decoration: none;
+  transition: transform 0.15s;
+}
+.aff-card-cta:hover {
+  transform: translateY(-1px);
+}

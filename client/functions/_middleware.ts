@@ -28,21 +28,26 @@ const prerender: PagesFunction<Env> = async (context) => {
   const url = new URL(request.url);
   const pathname = url.pathname;
 
-  // 仅处理文章页路径 /posts/:slug
-  const postMatch = pathname.match(/^\/posts\/([^/]+)$/);
+  // 处理文章页：/posts/:slug 和 /en/posts/:slug
+  const postMatch = pathname.match(/^(?:\/en)?\/posts\/([^/]+)$/);
   if (!postMatch) {
     return context.next();
   }
 
-  // 检测 User-Agent 是否为爬虫
+  // 检测 User-Agent 是否为爬虫（含 AdSense 审核爬虫）
   const ua = request.headers.get("user-agent") || "";
-  if (!BOT_UA_REGEX.test(ua)) {
+  const BOT_UA_REGEX_EXTENDED = new RegExp(
+    BOT_UA_REGEX.source + "|Mediapartners-Google|AdsBot-Google|Google-InspectionTool",
+    "i"
+  );
+  if (!BOT_UA_REGEX_EXTENDED.test(ua)) {
     // 普通用户 → 直接返回 SPA
     return context.next();
   }
 
   // 爬虫请求 → 从后端获取文章数据
   const slug = postMatch[1];
+  const isEn = pathname.startsWith("/en/");
   const backend = getBackendUrl(context.env);
   if (!backend) {
     return context.next();
@@ -66,6 +71,7 @@ const prerender: PagesFunction<Env> = async (context) => {
       tags: string[];
       createdAt: string;
       updatedAt: string;
+      author?: string;
     };
 
     // 获取原始 index.html（用根路径请求静态资源）
@@ -83,13 +89,17 @@ const prerender: PagesFunction<Env> = async (context) => {
       }
       return result.replace(/\s+/g, " ").trim();
     };
-    const description = post.excerpt || (post.content ? stripHtml(post.content).slice(0, 160) : "");
+    const plainText = post.content ? stripHtml(post.content) : "";
+    const description = post.excerpt || plainText.slice(0, 160);
     const siteOrigin = url.origin;
-    const articleUrl = `${siteOrigin}/posts/${post.slug}`;
+    const zhUrl = `${siteOrigin}/posts/${post.slug}`;
+    const enUrl = `${siteOrigin}/en/posts/${post.slug}`;
+    const articleUrl = isEn ? enUrl : zhUrl;
     const ogImage = `${siteOrigin}/og-default.png`;
 
     // 转义 HTML 特殊字符
     const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const escJson = (s: string) => JSON.stringify(s).slice(1, -1);
 
     // 替换 <title>
     html = html.replace(/<title>[^<]*<\/title>/, `<title>${esc(post.title)} | Monolith</title>`);
@@ -111,6 +121,10 @@ const prerender: PagesFunction<Env> = async (context) => {
       /(<meta\s+property="og:image"\s+content=")[^"]*(")/i,
       `$1${ogImage}$2`
     );
+    html = html.replace(
+      /(<meta\s+property="og:locale"\s+content=")[^"]*(")/i,
+      `$1${isEn ? "en_US" : "zh_CN"}$2`
+    );
 
     // 替换 Twitter Card 标签
     html = html.replace(
@@ -128,18 +142,50 @@ const prerender: PagesFunction<Env> = async (context) => {
       `$1${esc(description)}$2`
     );
 
-    // 注入 canonical URL 和 article 元数据（在 </head> 前插入）
-    const extraMeta = [
+    // 构建 JSON-LD 结构化数据
+    const jsonLd = {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      headline: post.title,
+      description: description,
+      url: articleUrl,
+      datePublished: post.createdAt,
+      dateModified: post.updatedAt || post.createdAt,
+      inLanguage: isEn ? "en-US" : "zh-CN",
+      author: { "@type": "Person", name: post.author || "Monolith" },
+      publisher: {
+        "@type": "Organization",
+        name: "Monolith",
+        url: siteOrigin,
+      },
+      mainEntityOfPage: { "@type": "WebPage", "@id": articleUrl },
+    };
+
+    // 注入：canonical + hreflang + article meta + JSON-LD（在 </head> 前插入）
+    const extraHead = [
       `<link rel="canonical" href="${esc(articleUrl)}" />`,
+      `<link rel="alternate" hreflang="zh-CN" href="${esc(zhUrl)}" />`,
+      `<link rel="alternate" hreflang="en" href="${esc(enUrl)}" />`,
+      `<link rel="alternate" hreflang="x-default" href="${esc(zhUrl)}" />`,
       `<meta property="og:url" content="${esc(articleUrl)}" />`,
       `<meta property="article:published_time" content="${esc(post.createdAt)}" />`,
       post.updatedAt ? `<meta property="article:modified_time" content="${esc(post.updatedAt)}" />` : "",
       ...(post.tags || []).map((tag) => `<meta property="article:tag" content="${esc(tag)}" />`),
+      `<script type="application/ld+json">${JSON.stringify(jsonLd)}</script>`,
     ]
       .filter(Boolean)
       .join("\n    ");
 
-    html = html.replace("</head>", `    ${extraMeta}\n  </head>`);
+    html = html.replace("</head>", `    ${extraHead}\n  </head>`);
+
+    // 注入 <noscript> 纯文本正文（爬虫无 JS 时可见内容，防"内容单薄"拒审）
+    const noscriptContent = plainText.slice(0, 5000);
+    if (noscriptContent) {
+      html = html.replace(
+        /<div id="root"><\/div>/,
+        `<div id="root"></div><noscript><article><h1>${esc(post.title)}</h1><p>${esc(noscriptContent)}</p></article></noscript>`
+      );
+    }
 
     return new Response(html, {
       status: 200,
