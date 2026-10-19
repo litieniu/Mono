@@ -13,6 +13,13 @@ import { D1Adapter } from "./db/d1";
 import { R2Adapter } from "./object/r2";
 import { S3Adapter } from "./object/s3";
 
+// 2026-10-19 性能修复：schema 检查每 isolate 只跑一次。
+// 原逻辑每请求跑约 18 个串行 D1 查询（9 张表 × 查表+查列），导致所有 API（含 /api/health）TTFB 1-2s。
+// Worker isolate 会复用，模块级变量跨请求有效；新部署起新 isolate，标记归零，安全网仍在；
+// 检查抛错时不标记，下个请求会重试，行为与之前一致。
+
+const schemaCheckedPerIsolate = { done: false };
+
 /**
  * 创建数据库适配器
  * 支持的 DB_PROVIDER: 'd1' (默认) | 'turso' | 'postgres'
@@ -25,10 +32,13 @@ export async function createDatabase(env: Record<string, unknown>): Promise<IDat
     case "d1": {
       if (!env.DB) throw new Error("缺少 D1 数据库绑定 (env.DB)");
       const d1Adapter = new D1Adapter(env.DB as D1Database);
-      if (autoSchemaMigration) {
-        await d1Adapter.ensureSchema();
-      } else {
-        await d1Adapter.ensureSchemaBaseline();
+      if (!schemaCheckedPerIsolate.done) {
+        if (autoSchemaMigration) {
+          await d1Adapter.ensureSchema();
+        } else {
+          await d1Adapter.ensureSchemaBaseline();
+        }
+        schemaCheckedPerIsolate.done = true;
       }
       return d1Adapter;
     }
