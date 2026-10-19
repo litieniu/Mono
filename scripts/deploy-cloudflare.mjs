@@ -316,7 +316,10 @@ if (!options.skipClient) {
     options.branch,
     "--commit-dirty=true",
     "--commit-message",
-    "monolith deploy",
+    // Windows 下 spawnSync(shell:true) 不会自动给带空格的参数加引号，
+    // 必须自带双引号，否则 cmd 会把 "monolith deploy" 拆成两个参数导致 wrangler 报 Unknown argument: deploy；
+    // 非 Windows 下 shell:false，参数原样传递，加引号反而会把引号写进消息里。
+    IS_WIN ? '"monolith deploy"' : "monolith deploy",
   ], { cwd: clientRoot });
 }
 
