@@ -94,6 +94,12 @@ export const en: Record<keyof typeof zh, string> = {
   "search.open": "Open search",
   "search.articles": "Posts",
   "search.tags": "Tags",
+  "search.noResultHint": "Try a different keyword or explore a common topic.",
+  "search.hintNavigate": "Navigate",
+  "search.hintOpen": "Open",
+  "search.hintClose": "Close",
+  "search.searching": "Searching",
+  "search.triggerTitle": "Search (Ctrl+K)",
 
   // Share
   "share.title": "Share",

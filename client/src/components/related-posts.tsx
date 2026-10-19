@@ -45,7 +45,7 @@ export function RelatedPosts({ currentSlug, currentTags }: RelatedPostsProps) {
     <section className="mt-[48px] animate-fade-in">
       <h2 className="mb-[20px] flex items-center gap-[8px] text-[14px] font-medium uppercase tracking-normal text-muted-foreground/50">
         <span className="h-[1px] flex-1 bg-border/20" />
-        相关推荐
+        {t("post.related")}
         <span className="h-[1px] flex-1 bg-border/20" />
       </h2>
 
@@ -75,7 +75,7 @@ export function RelatedPosts({ currentSlug, currentTags }: RelatedPostsProps) {
 
             {/* 底部箭头 */}
             <div className="mt-[12px] flex items-center text-[11px] text-muted-foreground/30 transition-colors group-hover:text-foreground/70">
-              阅读全文
+              {t("home.readMore")}
               <ArrowRight className="ml-[4px] h-[10px] w-[10px] translate-x-0 group-hover:translate-x-[3px] transition-transform" />
             </div>
           </LocalizedLink>

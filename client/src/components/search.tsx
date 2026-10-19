@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Link } from "wouter";
 import { Search, X, FileText, Loader2 } from "lucide-react";
-import { useLanguage } from "@/lib/i18n";
+import { useLanguage, LocalizedLink } from "@/lib/i18n";
 
 type SearchResult = {
   id: number;
@@ -60,7 +59,7 @@ function splitByQuery(text: string, query: string) {
 }
 
 export function SearchOverlay() {
-  const { t } = useLanguage();
+  const { t, lp } = useLanguage();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -134,7 +133,7 @@ export function SearchOverlay() {
       const selected = findSelectedResult(results, selectedIndex);
       if (selected) {
         setOpen(false);
-        window.location.href = `/posts/${selected.slug}`;
+        window.location.href = lp("/posts/" + selected.slug);
       }
     }
   };
@@ -199,8 +198,8 @@ export function SearchOverlay() {
           {query.trim() && !loading && results.length === 0 && (
             <div className="flex flex-col items-center justify-center py-[48px] text-muted-foreground">
               <Search className="h-[32px] w-[32px] mb-[12px] opacity-40" />
-              <p className="text-[14px] text-foreground/82">未找到相关文章</p>
-              <p className="mt-[4px] text-[12px] opacity-65">换一个主题词，或从常见方向继续探索。</p>
+              <p className="text-[14px] text-foreground/82">{t("search.noResult")}</p>
+              <p className="mt-[4px] text-[12px] opacity-65">{t("search.noResultHint")}</p>
               <div className="mt-[14px] flex flex-wrap justify-center gap-[8px] px-[16px]">
                 {SEARCH_SUGGESTIONS.map((item) => (
                   <button
@@ -220,7 +219,7 @@ export function SearchOverlay() {
           )}
 
           {results.map((result, index) => (
-            <Link
+            <LocalizedLink
               key={result.slug}
               href={`/posts/${result.slug}`}
               onClick={() => setOpen(false)}
@@ -255,7 +254,7 @@ export function SearchOverlay() {
                   </div>
                 )}
               </div>
-            </Link>
+            </LocalizedLink>
           ))}
         </div>
 
@@ -264,19 +263,19 @@ export function SearchOverlay() {
           <div className="flex items-center gap-[12px]">
             <span className="flex items-center gap-[4px]">
               <kbd className="px-[4px] py-[1px] rounded bg-muted/40 font-mono text-[10px]">↑↓</kbd>
-              导航
+              {t("search.hintNavigate")}
             </span>
             <span className="flex items-center gap-[4px]">
               <kbd className="px-[4px] py-[1px] rounded bg-muted/40 font-mono text-[10px]">↵</kbd>
-              打开
+              {t("search.hintOpen")}
             </span>
             <span className="flex items-center gap-[4px]">
               <kbd className="px-[4px] py-[1px] rounded bg-muted/40 font-mono text-[10px]">Esc</kbd>
-              关闭
+              {t("search.hintClose")}
             </span>
           </div>
           {query.trim() && (
-            <span>{loading ? "搜索中" : `${results.length} 条结果`}</span>
+            <span>{loading ? t("search.searching") : t("search.resultCount", { count: results.length })}</span>
           )}
         </div>
       </div>
@@ -295,7 +294,7 @@ export function SearchTrigger() {
     <button
       onClick={triggerSearch}
       className="inline-flex items-center justify-center h-[32px] w-[32px] rounded-md text-muted-foreground/50 hover:text-foreground hover:bg-accent/30 transition-all duration-200 cursor-pointer"
-      title="搜索 (Ctrl+K)"
+      title={t("search.triggerTitle")}
     >
       <Search className="h-[16px] w-[16px]" />
     </button>

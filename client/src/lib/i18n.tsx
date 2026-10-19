@@ -55,18 +55,6 @@ interface LanguageContextValue {
 
 const LanguageContext = createContext<LanguageContextValue | null>(null);
 
-function readStoredLang(): Language | null {
-  try {
-    const v = localStorage.getItem(STORAGE_KEY);
-    if (v === "zh" || v === "en") return v;
-  } catch { /* ignore */ }
-  try {
-    const m = document.cookie.match(new RegExp(`(?:^|;\\s*)${COOKIE_KEY}=([^;]+)`));
-    if (m && (m[1] === "zh" || m[1] === "en")) return m[1] as Language;
-  } catch { /* ignore */ }
-  return null;
-}
-
 function writeStoredLang(lang: Language) {
   try {
     localStorage.setItem(STORAGE_KEY, lang);
@@ -78,18 +66,11 @@ function writeStoredLang(lang: Language) {
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [wouterPath] = useWouterLocation();
-  const [lang, setLangState] = useState<Language>(() => {
-    // URL 优先，其次存储，最后浏览器语言
-    const fromUrl = detectLanguageFromPath(window.location.pathname);
-    if (window.location.pathname.startsWith("/en")) return fromUrl;
-    const stored = readStoredLang();
-    if (stored) return stored;
-    try {
-      return navigator.language.toLowerCase().startsWith("zh") ? "zh" : "en";
-    } catch {
-      return "zh";
-    }
-  });
+  // 初始语言完全由 URL 路径决定：/en 开头即英文，否则一律中文。
+  // 不嗅探 navigator.language、不读本地存储，避免英文浏览器访问中文根路径时 UI 语言闪烁跳变。
+  const [lang, setLangState] = useState<Language>(() =>
+    detectLanguageFromPath(window.location.pathname)
+  );
 
   // URL 变化时同步语言（浏览器前进/后退）
   useEffect(() => {

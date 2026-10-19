@@ -276,11 +276,12 @@ export function PostPage() {
                 }
               }
               // 处理 aff-card 优惠码复制（事件委托，避免内联 onclick 被 CSP 拦截）
-              const affBtn = target.closest('.aff-card-copy') as HTMLButtonElement | null;
-              if (affBtn && affBtn.dataset.coupon) {
-                navigator.clipboard.writeText(affBtn.dataset.coupon).then(() => {
+              const affBtn = target.closest(".aff-card-copy") as HTMLButtonElement | null;
+              const coupon = affBtn?.getAttribute("data-coupon");
+              if (affBtn && coupon) {
+                navigator.clipboard.writeText(coupon).then(() => {
                   const orig = affBtn.textContent;
-                  affBtn.textContent = "✓ 已复制";
+                  affBtn.textContent = "已复制 ✓";
                   setTimeout(() => { affBtn.textContent = orig; }, 2000);
                 }).catch(console.error);
                 return;

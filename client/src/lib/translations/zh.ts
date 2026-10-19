@@ -93,6 +93,12 @@ export const zh = {
   "search.open": "打开搜索",
   "search.articles": "文章",
   "search.tags": "标签",
+  "search.noResultHint": "换一个主题词，或从常见方向继续探索。",
+  "search.hintNavigate": "导航",
+  "search.hintOpen": "打开",
+  "search.hintClose": "关闭",
+  "search.searching": "搜索中",
+  "search.triggerTitle": "搜索 (Ctrl+K)",
 
   // 分享
   "share.title": "分享到",
