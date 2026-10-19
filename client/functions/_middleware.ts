@@ -148,24 +148,34 @@ const prerender: PagesFunction<Env> = async (context) => {
       "@type": "BlogPosting",
       headline: post.title,
       description: description,
-      url: articleUrl,
+      url: canonicalUrl,
       datePublished: post.createdAt,
       dateModified: post.updatedAt || post.createdAt,
-      inLanguage: isEn ? "en-US" : "zh-CN",
+      inLanguage: contentIsChinese ? "zh-CN" : isEn ? "en-US" : "zh-CN",
       author: { "@type": "Person", name: post.author || "Monolith" },
       publisher: {
         "@type": "Organization",
         name: "Monolith",
         url: siteOrigin,
       },
-      mainEntityOfPage: { "@type": "WebPage", "@id": articleUrl },
+      mainEntityOfPage: { "@type": "WebPage", "@id": canonicalUrl },
     };
 
+    // CJK 检测：如果标题主要是中文，不声明英文版本（防重复内容惩罚）
+    const isCjkHeavy = (s: string) => {
+      if (!s) return false;
+      const cjk = (s.match(/[\u4e00-\u9fff]/g) || []).length;
+      return cjk / Math.max(s.length, 1) > 0.3;
+    };
+    const contentIsChinese = isCjkHeavy(post.title);
+
     // 注入：canonical + hreflang + article meta + JSON-LD（在 </head> 前插入）
+    // 中文文章的 canonical 指向中文 URL，/en/ 访问时也不声明 en hreflang
+    const canonicalUrl = contentIsChinese ? zhUrl : articleUrl;
     const extraHead = [
-      `<link rel="canonical" href="${esc(articleUrl)}" />`,
+      `<link rel="canonical" href="${esc(canonicalUrl)}" />`,
       `<link rel="alternate" hreflang="zh-CN" href="${esc(zhUrl)}" />`,
-      `<link rel="alternate" hreflang="en" href="${esc(enUrl)}" />`,
+      ...(!contentIsChinese ? [`<link rel="alternate" hreflang="en" href="${esc(enUrl)}" />`] : []),
       `<link rel="alternate" hreflang="x-default" href="${esc(zhUrl)}" />`,
       `<meta property="og:url" content="${esc(articleUrl)}" />`,
       `<meta property="article:published_time" content="${esc(post.createdAt)}" />`,

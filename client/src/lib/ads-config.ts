@@ -56,13 +56,13 @@ export const AFFILIATE_CONFIG = {
     {
       name: "Cloudflare",
       description: "本站就跑在 CF 边缘网络上，免费套餐够用",
-      url: "https://www.cloudflare.com/",
+      url: "/go/cloudflare",
       accentClass: "bg-orange-500/10 text-orange-500 border-orange-500/20",
     },
     {
       name: "Vultr",
       description: "按小时计费的 VPS，新用户有赠金",
-      url: "https://www.vultr.com/",
+      url: "/go/vultr",
       accentClass: "bg-blue-500/10 text-blue-500 border-blue-500/20",
     },
   ] as AffiliateItem[],

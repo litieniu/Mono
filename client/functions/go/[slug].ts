@@ -20,5 +20,14 @@ export const onRequest: PagesFunction = async (context) => {
     return new Response("Not Found", { status: 404 });
   }
 
-  return Response.redirect(target, 302);
+  return new Response(null, {
+    status: 302,
+    headers: {
+      Location: target,
+      "X-Robots-Tag": "noindex, nofollow",
+      // 不缓存 302：主机商换推广链接后老访客立即生效
+      "Cache-Control": "no-store, no-cache, must-revalidate",
+      "Referrer-Policy": "no-referrer-when-downgrade",
+    },
+  });
 };

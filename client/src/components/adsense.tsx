@@ -107,6 +107,8 @@ export function AdSlot({ slot, size, className = "", label }: AdSlotProps) {
           if (!cancelled && !pushedRef.current) {
             pushAd();
             pushedRef.current = true;
+            // 打标记，防 useAdSenseRouteRefresh 重复 push
+            insRef.current?.setAttribute("data-mono-pushed", "true");
             // 检测广告是否被拦截：1秒后检查 ins 是否有内容
             setTimeout(() => {
               if (!cancelled && insRef.current) {
@@ -203,13 +205,15 @@ export function useAdSenseRouteRefresh() {
     // 路由变化后，给新挂载的广告位一点时间再统一补推一次
     const t = setTimeout(() => {
       try {
-        // 只处理仍在 DOM 中且未被填充的广告位（防旧页面卸载/新页面未挂载的竞态）
+        // 只处理仍在 DOM 中、未被填充、且 AdSlot 自身还没 push 过的广告位
+        // （防 AdSlot useEffect 与此处的重复 push 导致 TagError）
         const slots = Array.from(
-          document.querySelectorAll("ins.adsbygoogle:not([data-ad-status])"),
+          document.querySelectorAll("ins.adsbygoogle:not([data-ad-status]):not([data-mono-pushed])"),
         ).filter((el) => el.isConnected);
-        if (slots.length > 0) {
+        slots.forEach((el) => {
+          el.setAttribute("data-mono-pushed", "true");
           (window.adsbygoogle = window.adsbygoogle || []).push({});
-        }
+        });
       } catch {
         // 忽略
       }

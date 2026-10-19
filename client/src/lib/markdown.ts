@@ -362,8 +362,8 @@ function renderAffCards(md: string): string {
     ${discount ? `<span class="aff-card-discount">${esc(discount)}</span>` : ""}
   </div>
   ${price ? `<div class="aff-card-price">${esc(price)}</div>` : ""}
-  ${coupon ? `<div class="aff-card-coupon"><code>${esc(coupon)}</code><button class="aff-card-copy" data-coupon="${esc(coupon)}" onclick="navigator.clipboard.writeText('${esc(coupon)}');this.textContent='已复制';setTimeout(()=>this.textContent='复制优惠码',2000)">复制优惠码</button></div>` : ""}
-  <a class="aff-card-cta" href="/go/${esc(id)}" rel="noopener sponsored nofollow">立即购买 →</a>
+  ${coupon ? `<div class="aff-card-coupon"><code>${esc(coupon)}</code><button type="button" class="aff-card-copy" data-coupon="${esc(coupon)}">复制优惠码</button></div>` : ""}
+  <a class="aff-card-cta" href="/go/${esc(id)}" target="_blank" rel="noopener sponsored nofollow">立即购买 →</a>
 </div>`;
     }
   );
@@ -391,7 +391,7 @@ export function renderMarkdown(md: string): string {
       "allow", "allowfullscreen", "frameborder", "scrolling",
       "playsinline", "preload", "controls",
       "loading", "decoding", "data-lazy-img", "data-aff-id", "data-coupon",
-      "target", "rel", "onclick",
+      "target", "rel",
       "xmlns", "encoding", "mathvariant", "stretchy", "fence",
       "separator", "accent", "accentunder", "lspace", "rspace",
       "columnalign", "rowalign", "columnspacing", "rowspacing",

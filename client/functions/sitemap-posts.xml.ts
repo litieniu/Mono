@@ -62,12 +62,10 @@ export const onRequest: PagesFunction<{ API_BASE: string }> = async (context) =>
     .map((p) => {
       const lastmod = (p.updatedAt || p.createdAt || "").split("T")[0];
       const zhUrl = `${origin}/posts/${p.slug}`;
-      const enUrl = `${origin}/en/posts/${p.slug}`;
+      // 文章为单语中文存储，不输出 en hreflang（防重复内容惩罚）
+      // 只有 sitemap-pages.xml.ts 的静态页保留双语 hreflang
       return `  <url>
     <loc>${escapeXml(zhUrl)}</loc>
-    <xhtml:link rel="alternate" hreflang="zh-CN" href="${escapeXml(zhUrl)}" />
-    <xhtml:link rel="alternate" hreflang="en" href="${escapeXml(enUrl)}" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="${escapeXml(zhUrl)}" />
     ${lastmod ? `<lastmod>${lastmod}</lastmod>` : ""}
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -76,8 +74,7 @@ export const onRequest: PagesFunction<{ API_BASE: string }> = async (context) =>
     .join("\n");
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls}
 </urlset>`;
 
