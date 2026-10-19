@@ -1,4 +1,5 @@
-import { Link, useLocation } from "wouter";
+import { Link } from "wouter";
+import { useWouterLocation as useLocation } from "@/lib/i18n";
 import { SeoHead } from "@/components/seo-head";
 import { Home, ArrowLeft } from "lucide-react";
 

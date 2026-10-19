@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useLocation } from "wouter";
+import { useWouterLocation as useLocation } from "@/lib/i18n";
 import { ADSENSE_CONFIG, AFFILIATE_CONFIG } from "@/lib/ads-config";
 import { useLanguage } from "@/lib/i18n";
 

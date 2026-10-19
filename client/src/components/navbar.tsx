@@ -1,6 +1,5 @@
 "use client";
 
-import { useLocation } from "wouter";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { Menu } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -9,7 +8,7 @@ import { SearchTrigger } from "@/components/search";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { fetchNavPages, type NavPage } from "@/lib/api";
 import { useSiteSettings } from "@/lib/site-settings";
-import { useLanguage, LocalizedLink, stripLangPrefix } from "@/lib/i18n";
+import { useLanguage, LocalizedLink, stripLangPrefix, useWouterLocation as useLocation } from "@/lib/i18n";
 
 export function Navbar() {
   const [location] = useLocation();

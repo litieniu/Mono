@@ -5,9 +5,9 @@ import {
   useEffect,
   useMemo,
   useState,
+  useSyncExternalStore,
   type ReactNode,
 } from "react";
-import { useLocation as useWouterLocation } from "wouter";
 import { zh } from "./translations/zh";
 import { en } from "./translations/en";
 
@@ -121,6 +121,43 @@ export function useLanguage(): LanguageContextValue {
   const ctx = useContext(LanguageContext);
   if (!ctx) throw new Error("useLanguage must be used within LanguageProvider");
   return ctx;
+}
+
+/**
+ * 与 wouter useLocation() 同签名的安全版本：直接订阅浏览器地址变化，
+ * 不经过 wouter 的 Router 上下文。
+ *
+ * 背景：<Router hook={useLocalizedLocationHook}> 内部若调用 wouter 的 useLocation()，
+ * 它会经 useRouter() 读到当前 Router 的 hook（即 useLocalizedLocationHook 自身），
+ * 形成无限递归（Maximum call stack size exceeded，首页白屏）。
+ * 此实现返回 [原始路径（含 /en 前缀）, 跳转函数]，在自定义 Router 内外均可安全使用。
+ */
+const LOCATION_CHANGE_EVENTS = ["popstate", "pushState", "replaceState", "hashchange"] as const;
+
+function subscribeToLocationChange(onChange: () => void): () => void {
+  LOCATION_CHANGE_EVENTS.forEach((event) => window.addEventListener(event, onChange));
+  return () => {
+    LOCATION_CHANGE_EVENTS.forEach((event) => window.removeEventListener(event, onChange));
+  };
+}
+
+function readBrowserPathname(): string {
+  return window.location.pathname;
+}
+
+function navigateInPlace(to: string, options?: { replace?: boolean }): void {
+  window.history[options?.replace ? "replaceState" : "pushState"](null, "", to);
+  // wouter 已在模块加载时 monkey-patch 了 pushState/replaceState 并 dispatch 对应事件；
+  // 这里再补发一个 popstate，保证订阅者一定收到通知。
+  window.dispatchEvent(new PopStateEvent("popstate"));
+}
+
+export function useWouterLocation(): [
+  string,
+  (to: string, options?: { replace?: boolean }) => void,
+] {
+  const pathname = useSyncExternalStore(subscribeToLocationChange, readBrowserPathname);
+  return [pathname, navigateInPlace];
 }
 
 /**
